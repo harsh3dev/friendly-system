@@ -1,6 +1,8 @@
+import { useRef } from 'react';
 import { useProjectsView } from './useProjectsView';
 import { ProjectCard } from './ProjectCard';
 import { ProjectModal } from './ProjectModal';
+import { ImportDialog } from './ImportDialog';
 import { OfflineBanner } from '@/components/offline/OfflineBanner';
 import { StatCard } from '@/components/ui/stat-card';
 import { ThemeBtn } from '@/components/ui/theme-btn';
@@ -9,11 +11,13 @@ import { Button } from '@/components/ui/button';
 import { IconWrapper } from '@/components/ui/icon-wrapper';
 
 export function ProjectsView() {
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const {
     projects, globalStats, projectStats,
     projectModal, openCreateModal, openEditModal, closeModal, handleSaveProject,
     deleteConfirm, confirmDelete, cancelDelete, handleDeleteProject,
-    navigateToProject, isOffline,
+    navigateToProject, isOffline, notice, dismissNotice, pendingImport,
+    handleExportDashboard, handleImportFile, cancelImport, confirmImport,
   } = useProjectsView();
 
   return (
@@ -25,6 +29,31 @@ export function ProjectsView() {
             TaskFlow
           </div>
           <div className="flex items-center gap-2">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="application/json,.json"
+              className="hidden"
+              onChange={(event) => {
+                const file = event.target.files?.[0];
+                if (file) {
+                  void handleImportFile(file);
+                }
+                event.currentTarget.value = '';
+              }}
+            />
+            <Button variant="outline" size="sm" onClick={handleExportDashboard}>
+              <IconWrapper name="Download" className="size-4" tooltip={null} />
+              Export
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              <IconWrapper name="Upload" className="size-4" tooltip={null} />
+              Import
+            </Button>
             <ThemeBtn />
             {!isOffline && (
               <Button size="sm" onClick={openCreateModal}>
@@ -38,6 +67,20 @@ export function ProjectsView() {
 
       <main className="mx-auto max-w-5xl space-y-5 px-4 py-6">
         {isOffline && <OfflineBanner />}
+        {notice && (
+          <div
+            className={`flex items-start justify-between gap-3 rounded-xl border px-4 py-3 text-sm ${
+              notice.type === 'error'
+                ? 'border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-400/20 dark:bg-rose-400/10 dark:text-rose-100'
+                : 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-400/20 dark:bg-emerald-400/10 dark:text-emerald-100'
+            }`}
+          >
+            <p>{notice.message}</p>
+            <Button variant="ghost" size="icon-sm" onClick={dismissNotice} aria-label="Dismiss message">
+              <IconWrapper name="X" className="size-4" tooltip={null} />
+            </Button>
+          </div>
+        )}
         <div className="grid grid-cols-3 gap-3 sm:gap-4">
           <StatCard label="Projects" value={globalStats.projects} colorClass="text-foreground" icon={<IconWrapper name="Layers" className="size-3.5" tooltip={null} />} />
           <StatCard label="Total Tasks" value={globalStats.total} colorClass="text-foreground" icon={<IconWrapper name="ClipboardList" className="size-3.5" tooltip={null} />} />
@@ -89,6 +132,13 @@ export function ProjectsView() {
           message="project and all its tasks"
           onConfirm={handleDeleteProject}
           onCancel={cancelDelete}
+        />
+      )}
+      {pendingImport && (
+        <ImportDialog
+          pendingImport={pendingImport}
+          onConfirm={confirmImport}
+          onCancel={cancelImport}
         />
       )}
     </div>

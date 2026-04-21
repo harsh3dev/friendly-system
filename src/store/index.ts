@@ -1,6 +1,15 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { Project, Task, Status, TaskHistoryEntry, HistoryEventType } from '@/lib/types';
+import type {
+  Project,
+  Task,
+  Status,
+  TaskHistoryEntry,
+  HistoryEventType,
+  DashboardBackup,
+  DashboardBackupData,
+  DashboardImportResult,
+} from '@/lib/types';
 
 type TaskInput = Pick<Task, 'title' | 'description' | 'priority' | 'dueDate'>;
 type ProjectInput = Pick<Project, 'name' | 'description'>;
@@ -9,6 +18,10 @@ interface AppState {
   projects: Project[];
   tasks: Task[];
   taskHistory: TaskHistoryEntry[];
+
+  exportDashboard: () => DashboardBackup;
+  validateDashboardImport: (payload: unknown) => DashboardImportResult;
+  importDashboard: (payload: unknown) => DashboardImportResult;
 
   addProject: (data: ProjectInput) => void;
   updateProject: (id: string, data: ProjectInput) => void;
@@ -19,6 +32,98 @@ interface AppState {
   updateTaskStatus: (id: string, status: Status) => void;
   toggleTask: (id: string) => void;
   deleteTask: (id: string) => void;
+}
+
+const BACKUP_SCHEMA_VERSION = 1 as const;
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null;
+
+const isString = (value: unknown): value is string => typeof value === 'string';
+
+const isPriority = (value: unknown): value is Task['priority'] =>
+  value === 'low' || value === 'medium' || value === 'high';
+
+const isStatus = (value: unknown): value is Status =>
+  value === 'todo' || value === 'in-progress' || value === 'done';
+
+const isHistoryEvent = (value: unknown): value is HistoryEventType =>
+  value === 'created' ||
+  value === 'status_changed' ||
+  value === 'priority_changed' ||
+  value === 'title_changed' ||
+  value === 'description_changed' ||
+  value === 'due_date_changed';
+
+function validateProject(value: unknown): value is Project {
+  return (
+    isRecord(value) &&
+    isString(value.id) &&
+    isString(value.name) &&
+    isString(value.description) &&
+    isString(value.createdAt)
+  );
+}
+
+function validateTask(value: unknown): value is Task {
+  return (
+    isRecord(value) &&
+    isString(value.id) &&
+    isString(value.projectId) &&
+    isString(value.title) &&
+    isString(value.description) &&
+    isPriority(value.priority) &&
+    isString(value.dueDate) &&
+    isStatus(value.status) &&
+    isString(value.createdAt)
+  );
+}
+
+function validateTaskHistoryEntry(value: unknown): value is TaskHistoryEntry {
+  return (
+    isRecord(value) &&
+    isString(value.id) &&
+    isString(value.taskId) &&
+    isHistoryEvent(value.event) &&
+    isString(value.timestamp) &&
+    (value.from === undefined || isString(value.from)) &&
+    (value.to === undefined || isString(value.to))
+  );
+}
+
+function validateBackupData(value: unknown): value is DashboardBackupData {
+  if (!isRecord(value)) return false;
+  if (!Array.isArray(value.projects) || !value.projects.every(validateProject)) return false;
+  if (!Array.isArray(value.tasks) || !value.tasks.every(validateTask)) return false;
+  if (!Array.isArray(value.taskHistory) || !value.taskHistory.every(validateTaskHistoryEntry))
+    return false;
+
+  const projectIds = new Set(value.projects.map((project) => project.id));
+  const taskIds = new Set(value.tasks.map((task) => task.id));
+
+  if (value.tasks.some((task) => !projectIds.has(task.projectId))) return false;
+  if (value.taskHistory.some((entry) => !taskIds.has(entry.taskId))) return false;
+
+  return true;
+}
+
+function normalizeBackupPayload(payload: unknown): DashboardBackup | null {
+  if (!isRecord(payload)) return null;
+  if (payload.schemaVersion !== BACKUP_SCHEMA_VERSION) return null;
+  if (payload.appName !== 'TaskFlow') return null;
+  if (!isString(payload.exportedAt)) return null;
+  if (!validateBackupData(payload.data)) return null;
+
+  return {
+    appName: 'TaskFlow',
+    schemaVersion: BACKUP_SCHEMA_VERSION,
+    exportedAt: payload.exportedAt,
+    data: {
+      projects: payload.data.projects,
+      tasks: payload.data.tasks,
+      taskHistory: payload.data.taskHistory,
+    },
+  };
 }
 
 const makeEntry = (
@@ -41,6 +146,52 @@ export const useAppStore = create<AppState>()(
       projects: [],
       tasks: [],
       taskHistory: [],
+
+      exportDashboard: () => {
+        const { projects, tasks, taskHistory } = get();
+        return {
+          appName: 'TaskFlow',
+          schemaVersion: BACKUP_SCHEMA_VERSION,
+          exportedAt: new Date().toISOString(),
+          data: {
+            projects,
+            tasks,
+            taskHistory,
+          },
+        };
+      },
+
+      validateDashboardImport: (payload) => {
+        const backup = normalizeBackupPayload(payload);
+        if (!backup) {
+          return {
+            ok: false,
+            error:
+              'Invalid backup file. Expected a TaskFlow schemaVersion 1 export with valid projects, tasks, and history.',
+          };
+        }
+
+        return { ok: true };
+      },
+
+      importDashboard: (payload) => {
+        const backup = normalizeBackupPayload(payload);
+        if (!backup) {
+          return {
+            ok: false,
+            error:
+              'Invalid backup file. Expected a TaskFlow schemaVersion 1 export with valid projects, tasks, and history.',
+          };
+        }
+
+        set({
+          projects: backup.data.projects,
+          tasks: backup.data.tasks,
+          taskHistory: backup.data.taskHistory,
+        });
+
+        return { ok: true };
+      },
 
       addProject: (data) =>
         set((s) => ({

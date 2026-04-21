@@ -42,3 +42,21 @@ export interface TaskHistoryEntry {
   from?: string;
   to?: string;
 }
+
+export interface DashboardBackupData {
+  projects: Project[];
+  tasks: Task[];
+  taskHistory: TaskHistoryEntry[];
+}
+
+export interface DashboardBackup {
+  appName: 'TaskFlow';
+  schemaVersion: 1;
+  exportedAt: string;
+  data: DashboardBackupData;
+}
+
+export interface DashboardImportResult {
+  ok: boolean;
+  error?: string;
+}
