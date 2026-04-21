@@ -4,6 +4,7 @@ import { TaskListItem } from './TaskListItem';
 import { TaskCardItem } from './TaskCardItem';
 import { FilterBar } from './FilterBar';
 import { TaskModal } from './TaskModal';
+import { TaskDetailModal } from './TaskDetailModal';
 import { KanbanBoard } from '@/components/kanban/KanbanBoard';
 import { StatCard } from '@/components/ui/stat-card';
 import { ThemeBtn } from '@/components/ui/theme-btn';
@@ -17,6 +18,7 @@ export function ProjectDetailView() {
     projectTaskStats, filteredTasks, kanbanTasks, hasFilters,
     filters, setFilters, viewMode, setViewMode,
     taskModal, openCreateTask, openEditTask, closeTaskModal, handleSaveTask,
+    detailTask, openDetailTask, closeDetailTask,
     deleteConfirm, confirmDeleteTask, cancelDeleteTask, handleDeleteTask,
     handleToggleTask, handleStatusChange,
     navigateBack,
@@ -54,6 +56,7 @@ export function ProjectDetailView() {
             tasks={kanbanTasks}
             onEdit={openEditTask}
             onDelete={confirmDeleteTask}
+            onView={openDetailTask}
             onStatusChange={handleStatusChange}
           />
         ) : filteredTasks.length === 0 ? (
@@ -81,6 +84,7 @@ export function ProjectDetailView() {
                 onToggle={() => handleToggleTask(task.id)}
                 onEdit={() => openEditTask(task)}
                 onDelete={() => confirmDeleteTask(task.id)}
+                onView={() => openDetailTask(task)}
               />
             ))}
           </div>
@@ -93,12 +97,21 @@ export function ProjectDetailView() {
                 onToggle={() => handleToggleTask(task.id)}
                 onEdit={() => openEditTask(task)}
                 onDelete={() => confirmDeleteTask(task.id)}
+                onView={() => openDetailTask(task)}
               />
             ))}
           </div>
         )}
       </main>
 
+      {detailTask && (
+        <TaskDetailModal
+          task={detailTask}
+          onEdit={() => { closeDetailTask(); openEditTask(detailTask); }}
+          onDelete={() => { closeDetailTask(); confirmDeleteTask(detailTask.id); }}
+          onClose={closeDetailTask}
+        />
+      )}
       {taskModal.open && (
         <TaskModal
           task={taskModal.task}

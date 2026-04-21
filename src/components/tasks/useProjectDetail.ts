@@ -13,6 +13,7 @@ export function useProjectDetail() {
   const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [taskModal, setTaskModal] = useState<{ open: boolean; task?: Task }>({ open: false });
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [detailTask, setDetailTask] = useState<Task | null>(null);
 
   const currentProject = projects.find(p => p.id === projectId);
 
@@ -52,6 +53,9 @@ export function useProjectDetail() {
   const openEditTask = (task: Task) => { setTaskModal({ open: true, task }); };
   const closeTaskModal = () => { setTaskModal({ open: false }); };
 
+  const openDetailTask = (task: Task) => { setDetailTask(task); };
+  const closeDetailTask = () => { setDetailTask(null); };
+
   const handleSaveTask = (data: TaskFormData) => {
     if (taskModal.task) {
       updateTask(taskModal.task.id, data);
@@ -90,6 +94,9 @@ export function useProjectDetail() {
     openEditTask,
     closeTaskModal,
     handleSaveTask,
+    detailTask,
+    openDetailTask,
+    closeDetailTask,
     deleteConfirm,
     confirmDeleteTask,
     cancelDeleteTask,

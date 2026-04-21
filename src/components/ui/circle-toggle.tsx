@@ -1,6 +1,7 @@
 import { cn } from '@/lib/utils';
+import type { MouseEvent } from 'react';
 
-export const CircleToggle = ({ done, onClick }: { done: boolean; onClick: () => void }) => {
+export const CircleToggle = ({ done, onClick }: { done: boolean; onClick: (e: MouseEvent<HTMLButtonElement>) => void }) => {
   const doneClass = 'border-green-500 bg-green-500 text-white';
   const undoneClass = 'border-muted-foreground hover:border-primary';
   const buttonClass = done ? doneClass : undoneClass;

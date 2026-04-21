@@ -42,3 +42,9 @@ export const STATUS_LABELS: Record<TaskFilters['status'], string> = {
   'in-progress': 'In Progress',
   done: 'Done',
 };
+
+export const statusClasses: Record<Status, string> = {
+  todo: 'bg-sky-100 text-sky-700 dark:bg-sky-950 dark:text-sky-300',
+  'in-progress': 'bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300',
+  done: 'bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-300',
+};

@@ -71,21 +71,24 @@ export const FilterBar = ({ filters, setFilters, viewMode, setViewMode }: {
           <option value="medium">Medium</option>
           <option value="low">Low</option>
         </select>
-        <div className="flex overflow-hidden rounded-lg border border-border">
-          {(['list', 'card', 'kanban'] as const).map(v => (
+        <div className="flex rounded-lg border border-border">
+          {(['list', 'card', 'kanban'] as const).map((v, i, arr) => (
             <button
               key={v}
               onClick={handleViewModeClick(v)}
               className={cn(
-                'p-1.5 transition-colors',
+                'relative p-1.5 transition-colors',
+                i === 0 ? 'rounded-l-lg' : '',
+                i === arr.length - 1 ? 'rounded-r-lg' : '',
+                i > 0 ? 'border-l border-border' : '',
                 viewMode === v ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted',
               )}
             >
               {v === 'list'
-                ? <IconWrapper name="List" className="size-4" tooltip="List view" />
+                ? <IconWrapper name="List" className="size-4" tooltip="List view" tooltipPosition="bottom" />
                 : v === 'card'
-                ? <IconWrapper name="LayoutGrid" className="size-4" tooltip="Card view" />
-                : <IconWrapper name="Columns" className="size-4" tooltip="Kanban view" />
+                ? <IconWrapper name="LayoutGrid" className="size-4" tooltip="Card view" tooltipPosition="bottom" />
+                : <IconWrapper name="Columns" className="size-4" tooltip="Kanban view" tooltipPosition="bottom" />
               }
             </button>
           ))}
