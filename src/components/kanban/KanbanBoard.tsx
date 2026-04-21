@@ -5,12 +5,13 @@ import { KanbanCard } from './KanbanCard';
 import { cn } from '@/lib/utils';
 import { KANBAN_COLUMNS } from '@/lib/constants';
 
-export const KanbanBoard = ({ tasks, onEdit, onDelete, onView, onStatusChange }: {
+export const KanbanBoard = ({ tasks, onEdit, onDelete, onView, onStatusChange, highlightedTaskId }: {
   tasks: Task[];
   onEdit: (task: Task) => void;
   onDelete: (taskId: string) => void;
   onView: (task: Task) => void;
   onStatusChange: (taskId: string, status: Status) => void;
+  highlightedTaskId?: string | null;
 }) => {
   const [dragTaskId, setDragTaskId] = useState<string | null>(null);
   const [dragOverCol, setDragOverCol] = useState<Status | null>(null);
@@ -71,6 +72,7 @@ export const KanbanBoard = ({ tasks, onEdit, onDelete, onView, onStatusChange }:
                 <KanbanCard
                   key={task.id}
                   task={task}
+                  highlighted={task.id === highlightedTaskId}
                   onDragStart={() => handleDragStart(task.id)}
                   onEdit={() => onEdit(task)}
                   onDelete={() => onDelete(task.id)}

@@ -1,3 +1,5 @@
+import { useState, useRef, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 import { cn } from '@/lib/utils'
 import { icons, type IconName } from './icons'
 import type { LucideProps } from 'lucide-react'
@@ -11,58 +13,85 @@ const defaultTooltips: Partial<Record<IconName, string>> = {
   Moon: 'Dark mode',
   Sun: 'Light mode',
   ArrowLeft: 'Back',
+  ArrowUpRight: 'Open in project',
   FolderOpen: 'Open folder',
 }
 
-const tooltipPositionClasses = {
-  top: 'bottom-full left-1/2 -translate-x-1/2 mb-1.5',
-  bottom: 'top-full left-1/2 -translate-x-1/2 mt-1.5',
-  left: 'right-full top-1/2 -translate-y-1/2 mr-1.5',
-  right: 'left-full top-1/2 -translate-y-1/2 ml-1.5',
+interface TooltipPos {
+  x: number;
+  y: number;
+  placement: 'top' | 'bottom';
 }
 
 interface IconWrapperProps extends Omit<LucideProps, 'ref'> {
   name: IconName
-  /** Tooltip text. Pass `null` to suppress even the built-in default. */
   tooltip?: string | null
-  tooltipPosition?: keyof typeof tooltipPositionClasses
-  /** Classes applied to the tooltip element — use this to set bg, text color, etc. */
+  tooltipPosition?: 'top' | 'bottom' | 'left' | 'right'
   tooltipClassName?: string
 }
 
 export function IconWrapper({
   name,
   tooltip,
-  tooltipPosition = 'top',
+  tooltipPosition,
   tooltipClassName,
   className,
   ...props
 }: IconWrapperProps) {
   const Icon = icons[name]
-
-  // null → no tooltip; undefined → fall through to default
   const effectiveTooltip = tooltip === null ? null : (tooltip ?? defaultTooltips[name])
+
+  const ref = useRef<HTMLSpanElement>(null)
+  const [pos, setPos] = useState<TooltipPos | null>(null)
+
+  const show = useCallback(() => {
+    if (!ref.current) return
+    const r = ref.current.getBoundingClientRect()
+    const spaceAbove = r.top
+    const placement = tooltipPosition === 'bottom' || spaceAbove < 48 ? 'bottom' : 'top'
+    setPos({
+      x: r.left + r.width / 2,
+      y: placement === 'top' ? r.top - 6 : r.bottom + 6,
+      placement,
+    })
+  }, [tooltipPosition])
+
+  const hide = useCallback(() => setPos(null), [])
 
   if (!effectiveTooltip) {
     return <Icon className={className} {...props} />
   }
 
   return (
-    <span className="relative inline-flex group/tooltip">
+    <span
+      ref={ref}
+      className="relative inline-flex"
+      onMouseEnter={show}
+      onMouseLeave={hide}
+      onFocus={show}
+      onBlur={hide}
+    >
       <Icon className={className} {...props} />
-      <span
-        className={cn(
-          'absolute z-50 whitespace-nowrap rounded px-2 py-1 text-xs font-medium',
-          'bg-neutral-900 text-white dark:bg-neutral-100 dark:text-neutral-900',
-          'shadow-sm',
-          'opacity-0 group-hover/tooltip:opacity-100 pointer-events-none',
-          'transition-opacity duration-150',
-          tooltipPositionClasses[tooltipPosition],
-          tooltipClassName,
+      {pos &&
+        createPortal(
+          <span
+            style={{
+              position: 'fixed',
+              left: pos.x,
+              top: pos.y,
+              transform: `translate(-50%, ${pos.placement === 'top' ? '-100%' : '0'})`,
+            }}
+            className={cn(
+              'z-9999 whitespace-nowrap rounded px-2 py-1 text-xs font-medium pointer-events-none',
+              'bg-neutral-900 text-white dark:bg-neutral-100 dark:text-neutral-900',
+              'shadow-sm',
+              tooltipClassName,
+            )}
+          >
+            {effectiveTooltip}
+          </span>,
+          document.body,
         )}
-      >
-        {effectiveTooltip}
-      </span>
     </span>
   )
 }

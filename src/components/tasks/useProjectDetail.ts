@@ -1,11 +1,11 @@
-import { useState, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAppStore } from '@/store';
 import type { Task, TaskFilters, ViewMode, Status } from '@/lib/types';
-import type { TaskFormData } from '@/components/tasks/TaskModal';
+import type { TaskFormData } from '@/components/tasks/TaskEditorForm';
 
 export function useProjectDetail() {
-  const { projectId } = useParams<{ projectId: string }>();
+  const { projectId, taskId } = useParams<{ projectId: string; taskId?: string }>();
   const navigate = useNavigate();
   const { projects, tasks, addTask, updateTask, updateTaskStatus, toggleTask, deleteTask } = useAppStore();
 
@@ -16,6 +16,17 @@ export function useProjectDetail() {
   const [detailTask, setDetailTask] = useState<Task | null>(null);
 
   const currentProject = projects.find(p => p.id === projectId);
+  const routeTask = tasks.find(t => t.id === taskId && t.projectId === projectId) ?? null;
+  const isTaskRoute = Boolean(taskId);
+
+  useEffect(() => {
+    if (isTaskRoute) setDetailTask(null);
+  }, [isTaskRoute]);
+
+  useEffect(() => {
+    if (!isTaskRoute || routeTask || !projectId) return;
+    navigate(`/projects/${projectId}`, { replace: true });
+  }, [isTaskRoute, routeTask, projectId, navigate]);
 
   const projectTasks = useMemo(() =>
     tasks.filter(t => t.projectId === projectId),
@@ -65,19 +76,35 @@ export function useProjectDetail() {
     closeTaskModal();
   };
 
+  const handleUpdateRouteTask = (id: string, data: TaskFormData) => {
+    updateTask(id, data);
+  };
+
   const confirmDeleteTask = (id: string) => { setDeleteConfirm(id); };
   const cancelDeleteTask = () => { setDeleteConfirm(null); };
 
   const handleDeleteTask = () => {
     if (deleteConfirm) {
-      deleteTask(deleteConfirm);
+      const deletedTaskId = deleteConfirm;
+      deleteTask(deletedTaskId);
       setDeleteConfirm(null);
+      setDetailTask(prev => (prev?.id === deletedTaskId ? null : prev));
+      if (taskId === deletedTaskId && projectId) {
+        navigate(`/projects/${projectId}`, { replace: true });
+      }
     }
   };
 
   const handleToggleTask = (id: string) => { toggleTask(id); };
   const handleStatusChange = (id: string, status: Status) => { updateTaskStatus(id, status); };
-  const navigateBack = () => { navigate('/'); };
+  const navigateToProject = () => {
+    if (projectId) {
+      navigate(`/projects/${projectId}`);
+      return;
+    }
+    navigate('/');
+  };
+  const navigateHome = () => { navigate('/'); };
 
   return {
     currentProject,
@@ -94,7 +121,10 @@ export function useProjectDetail() {
     openEditTask,
     closeTaskModal,
     handleSaveTask,
+    handleUpdateRouteTask,
     detailTask,
+    routeTask,
+    isTaskRoute,
     openDetailTask,
     closeDetailTask,
     deleteConfirm,
@@ -103,6 +133,7 @@ export function useProjectDetail() {
     handleDeleteTask,
     handleToggleTask,
     handleStatusChange,
-    navigateBack,
+    navigateToProject,
+    navigateHome,
   };
 }

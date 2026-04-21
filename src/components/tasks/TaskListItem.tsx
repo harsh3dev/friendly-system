@@ -6,13 +6,14 @@ import { cn } from '@/lib/utils';
 import { formatDate, isOverdue } from '@/lib/task-helpers';
 import { priorityClasses, statusClasses, STATUS_LABELS } from '@/lib/constants';
 
-export function TaskListItem({ task, onToggle, onEdit, onDelete, onView }: {
-  task: Task; onToggle: () => void; onEdit: () => void; onDelete: () => void; onView: () => void;
+export function TaskListItem({ task, onToggle, onEdit, onDelete, onView, highlighted }: {
+  task: Task; onToggle: () => void; onEdit: () => void; onDelete: () => void; onView: () => void; highlighted?: boolean;
 }) {
   const overdue = isOverdue(task.dueDate, task.status);
   const done = task.status === 'done';
   return (
     <div
+      data-task-id={task.id}
       role="button"
       tabIndex={0}
       onClick={onView}
@@ -20,6 +21,7 @@ export function TaskListItem({ task, onToggle, onEdit, onDelete, onView }: {
       className={cn(
         'group flex cursor-pointer items-start gap-3 rounded-xl border border-border bg-card px-4 py-3 transition-all hover:shadow-sm hover:border-primary/30',
         done && 'opacity-60',
+        highlighted && 'ring-2 ring-primary/60 border-primary/50 [animation:task-highlight_1.4s_ease-out]',
       )}
     >
       <CircleToggle done={done} onClick={e => { e.stopPropagation(); onToggle(); }} />

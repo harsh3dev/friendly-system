@@ -12,9 +12,14 @@ import {
   Pencil,
   Trash2,
   ArrowLeft,
+  ArrowUpRight,
   FolderOpen,
   Layers,
   X,
+  CircleDot,
+  RefreshCw,
+  Flag,
+  Calendar,
 } from 'lucide-react'
 
 export const icons = {
@@ -31,9 +36,14 @@ export const icons = {
   Pencil,
   Trash2,
   ArrowLeft,
+  ArrowUpRight,
   FolderOpen,
   Layers,
   X,
+  CircleDot,
+  RefreshCw,
+  Flag,
+  Calendar,
 } as const
 
 export type IconName = keyof typeof icons

@@ -25,3 +25,20 @@ export interface TaskFilters {
   status: 'all' | Status;
   priority: 'all' | Priority;
 }
+
+export type HistoryEventType =
+  | 'created'
+  | 'status_changed'
+  | 'priority_changed'
+  | 'title_changed'
+  | 'description_changed'
+  | 'due_date_changed';
+
+export interface TaskHistoryEntry {
+  id: string;
+  taskId: string;
+  event: HistoryEventType;
+  timestamp: string;
+  from?: string;
+  to?: string;
+}

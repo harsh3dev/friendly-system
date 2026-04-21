@@ -7,8 +7,23 @@ export function ThemeBtn() {
   const isDark =
     theme === 'dark' ||
     (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+
+  const toggle = () => {
+    const next = isDark ? 'light' : 'dark';
+    const switchTheme = () => {
+      document.documentElement.classList.remove('light', 'dark');
+      document.documentElement.classList.add(next);
+      setTheme(next);
+    };
+    if (!document.startViewTransition) {
+      switchTheme();
+    } else {
+      document.startViewTransition(switchTheme);
+    }
+  };
+
   return (
-    <Button variant="ghost" size="icon-sm" onClick={() => setTheme(isDark ? 'light' : 'dark')}>
+    <Button variant="ghost" size="icon-sm" onClick={toggle}>
       <IconWrapper
         name={isDark ? 'Sun' : 'Moon'}
         className="size-4"

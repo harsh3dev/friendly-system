@@ -9,7 +9,7 @@ import { ThemeProvider } from "@/components/theme-provider.tsx"
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <BrowserRouter>
-      <ThemeProvider>
+      <ThemeProvider disableTransitionOnChange={false}>
         <App />
       </ThemeProvider>
     </BrowserRouter>

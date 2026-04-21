@@ -7,6 +7,7 @@ export default function App() {
     <Routes>
       <Route path="/" element={<ProjectsView />} />
       <Route path="/projects/:projectId" element={<ProjectDetailView />} />
+      <Route path="/projects/:projectId/tasks/:taskId" element={<ProjectDetailView />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
