@@ -22,7 +22,7 @@ export function TaskModal({ task, onSubmit, onClose }: Props) {
   });
   const [titleError, setTitleError] = useState('');
 
-  function handleSubmit(e: FormEvent) {
+  const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     if (!form.title.trim()) {
       setTitleError('Title is required');

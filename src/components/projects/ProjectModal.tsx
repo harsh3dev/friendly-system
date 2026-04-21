@@ -18,7 +18,7 @@ export function ProjectModal({ project, onSubmit, onClose }: Props) {
   });
   const [nameError, setNameError] = useState('');
 
-  function handleSubmit(e: FormEvent) {
+  const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     if (!form.name.trim()) {
       setNameError('Project name is required');

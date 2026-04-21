@@ -48,32 +48,32 @@ export function useProjectDetail() {
 
   const hasFilters = filters.search !== '' || filters.status !== 'all' || filters.priority !== 'all';
 
-  function openCreateTask() { setTaskModal({ open: true }); }
-  function openEditTask(task: Task) { setTaskModal({ open: true, task }); }
-  function closeTaskModal() { setTaskModal({ open: false }); }
+  const openCreateTask = () => { setTaskModal({ open: true }); };
+  const openEditTask = (task: Task) => { setTaskModal({ open: true, task }); };
+  const closeTaskModal = () => { setTaskModal({ open: false }); };
 
-  function handleSaveTask(data: TaskFormData) {
+  const handleSaveTask = (data: TaskFormData) => {
     if (taskModal.task) {
       updateTask(taskModal.task.id, data);
     } else if (projectId) {
       addTask({ projectId, ...data });
     }
     closeTaskModal();
-  }
+  };
 
-  function confirmDeleteTask(id: string) { setDeleteConfirm(id); }
-  function cancelDeleteTask() { setDeleteConfirm(null); }
+  const confirmDeleteTask = (id: string) => { setDeleteConfirm(id); };
+  const cancelDeleteTask = () => { setDeleteConfirm(null); };
 
-  function handleDeleteTask() {
+  const handleDeleteTask = () => {
     if (deleteConfirm) {
       deleteTask(deleteConfirm);
       setDeleteConfirm(null);
     }
-  }
+  };
 
-  function handleToggleTask(id: string) { toggleTask(id); }
-  function handleStatusChange(id: string, status: Status) { updateTaskStatus(id, status); }
-  function navigateBack() { navigate('/'); }
+  const handleToggleTask = (id: string) => { toggleTask(id); };
+  const handleStatusChange = (id: string, status: Status) => { updateTaskStatus(id, status); };
+  const navigateBack = () => { navigate('/'); };
 
   return {
     currentProject,

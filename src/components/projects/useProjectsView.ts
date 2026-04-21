@@ -23,30 +23,30 @@ export function useProjectsView() {
     completed: tasks.filter(t => t.status === 'done').length,
   }), [projects, tasks]);
 
-  function openCreateModal() { setProjectModal({ open: true }); }
-  function openEditModal(project: Project) { setProjectModal({ open: true, project }); }
-  function closeModal() { setProjectModal({ open: false }); }
+  const openCreateModal = () => { setProjectModal({ open: true }); };
+  const openEditModal = (project: Project) => { setProjectModal({ open: true, project }); };
+  const closeModal = () => { setProjectModal({ open: false }); };
 
-  function handleSaveProject(data: { name: string; description: string }) {
+  const handleSaveProject = (data: { name: string; description: string }) => {
     if (projectModal.project) {
       updateProject(projectModal.project.id, data);
     } else {
       addProject(data);
     }
     closeModal();
-  }
+  };
 
-  function confirmDelete(id: string) { setDeleteConfirm(id); }
-  function cancelDelete() { setDeleteConfirm(null); }
+  const confirmDelete = (id: string) => { setDeleteConfirm(id); };
+  const cancelDelete = () => { setDeleteConfirm(null); };
 
-  function handleDeleteProject() {
+  const handleDeleteProject = () => {
     if (deleteConfirm) {
       deleteProject(deleteConfirm);
       setDeleteConfirm(null);
     }
-  }
+  };
 
-  function navigateToProject(id: string) { navigate(`/projects/${id}`); }
+  const navigateToProject = (id: string) => { navigate(`/projects/${id}`); };
 
   return {
     projects,
