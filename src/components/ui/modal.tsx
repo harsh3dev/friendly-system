@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { motion } from 'motion/react';
 import { useOverlayBehavior } from '@/components/ui/use-overlay-behavior';
@@ -13,24 +13,33 @@ const EXIT_MS = 180;
 
 export function Modal({ onClose, children, className }: Props) {
   const [open, setOpen] = useState(false);
-  const closeTimeoutRef = useRef<number | null>(null);
+  const [closeTimerId, setCloseTimerId] = useState<number | null>(null);
 
   useEffect(() => {
     const id = requestAnimationFrame(() => setOpen(true));
     return () => {
       cancelAnimationFrame(id);
-      if (closeTimeoutRef.current !== null) {
-        window.clearTimeout(closeTimeoutRef.current);
-      }
     };
   }, []);
 
+  useEffect(() => {
+    if (closeTimerId === null) return undefined;
+    return () => {
+      window.clearTimeout(closeTimerId);
+    };
+  }, [closeTimerId]);
+
   const close = useCallback(() => {
     setOpen(false);
-    if (closeTimeoutRef.current !== null) {
-      window.clearTimeout(closeTimeoutRef.current);
-    }
-    closeTimeoutRef.current = window.setTimeout(onClose, EXIT_MS);
+    setCloseTimerId((prev) => {
+      if (prev !== null) {
+        window.clearTimeout(prev);
+      }
+      return window.setTimeout(() => {
+        setCloseTimerId(null);
+        onClose();
+      }, EXIT_MS);
+    });
   }, [onClose]);
 
   useOverlayBehavior(close);
@@ -40,7 +49,7 @@ export function Modal({ onClose, children, className }: Props) {
       animate={{ opacity: open ? 1 : 0 }}
       initial={{ opacity: 0 }}
       transition={{ duration: EXIT_MS / 1000, ease: 'easeOut' }}
-      className="fixed inset-0 z-50 grid place-items-center bg-black/50 p-4"
+      className="fixed inset-0 z-50 grid place-items-start overflow-y-auto bg-black/50 p-4 sm:place-items-center"
       onClick={e => e.target === e.currentTarget && close()}
     >
       <motion.div

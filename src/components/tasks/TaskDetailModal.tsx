@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils';
 import { formatDate, formatRelative, isOverdue } from '@/lib/task-helpers';
 import { priorityClasses, statusClasses, STATUS_LABELS } from '@/lib/constants';
 import { buttonVariants } from '@/components/ui/button-variants';
+import { TaskRichContent } from './TaskRichContent';
 
 const formatIsoDate = (iso: string) =>
   new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
@@ -70,7 +71,7 @@ export function TaskDetailModal({ task, readOnly = false, onEdit, onDelete, onCl
   return (
     <Modal onClose={onClose} className="max-w-3xl">
       {(close) => (
-        <div className="w-full overflow-hidden rounded-xl border border-border bg-card shadow-2xl">
+        <div className="flex max-h-[90vh] w-full flex-col overflow-hidden rounded-xl border border-border bg-card shadow-2xl">
           <div className="flex items-center justify-between gap-3 border-b border-border px-5 py-3">
             <p className="text-xs font-semibold uppercase tracking-widest text-primary">Task Detail</p>
             <div className="flex items-center gap-1">
@@ -88,8 +89,9 @@ export function TaskDetailModal({ task, readOnly = false, onEdit, onDelete, onCl
             </div>
           </div>
 
-          <div className="flex min-h-0 flex-col sm:flex-row">
-            <div className="flex flex-col gap-4 p-5 sm:w-1/2 sm:border-r sm:border-border">
+          <div className="flex min-h-0 flex-1 flex-col sm:flex-row">
+            <div className="min-h-0 overflow-y-auto p-5 sm:w-1/2 sm:border-r sm:border-border">
+              <div className="flex flex-col gap-4">
               <div className="flex flex-col gap-1.5">
                 <h2 className={cn('text-lg font-semibold leading-snug', done && 'line-through text-muted-foreground')}>
                   {task.title}
@@ -104,14 +106,10 @@ export function TaskDetailModal({ task, readOnly = false, onEdit, onDelete, onCl
                 </div>
               </div>
 
-              {task.description ? (
-                <div className="flex flex-col gap-1">
-                  <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Description</p>
-                  <p className="text-sm leading-relaxed text-foreground">{task.description}</p>
-                </div>
-              ) : (
-                <p className="text-sm italic text-muted-foreground">No description provided.</p>
-              )}
+              <div className="flex flex-col gap-1">
+                <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Description</p>
+                <TaskRichContent description={task.description} links={task.links} />
+              </div>
 
               <div className="grid grid-cols-2 gap-4">
                 {task.dueDate && (
@@ -128,13 +126,14 @@ export function TaskDetailModal({ task, readOnly = false, onEdit, onDelete, onCl
                   <p className="text-sm text-foreground">{formatIsoDate(task.createdAt)}</p>
                 </div>
               </div>
+              </div>
             </div>
 
-            <div className="flex flex-col sm:w-1/2">
+            <div className="flex min-h-0 flex-col sm:w-1/2">
               <div className="border-b border-border px-5 py-3">
                 <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Timeline</p>
               </div>
-              <div className="flex max-h-64 flex-col gap-0 overflow-y-auto px-5 py-3 sm:max-h-72">
+              <div className="flex min-h-0 flex-1 flex-col gap-0 overflow-y-auto px-5 py-3">
                 {history.length === 0 ? (
                   <p className="text-sm italic text-muted-foreground">No history yet.</p>
                 ) : (

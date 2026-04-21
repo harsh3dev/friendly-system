@@ -4,6 +4,7 @@ import type { Task } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { formatDate, isOverdue } from '@/lib/task-helpers';
 import { priorityClasses } from '@/lib/constants';
+import { TaskRichContent } from '@/components/tasks/TaskRichContent';
 
 export function KanbanCard({ task, onDragStart, onEdit, onDelete, onView, highlighted, readOnly = false }: {
   task: Task; onDragStart: () => void; onEdit: () => void; onDelete: () => void; onView: () => void; highlighted?: boolean; readOnly?: boolean;
@@ -42,8 +43,8 @@ export function KanbanCard({ task, onDragStart, onEdit, onDelete, onView, highli
         )}
       </div>
       <p className="text-sm font-medium leading-snug">{task.title}</p>
-      {task.description && (
-        <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{task.description}</p>
+      {(task.description || task.links.length > 0) && (
+        <TaskRichContent className="mt-1" description={task.description} links={task.links} compact />
       )}
       {task.dueDate && (
         <p className={cn('mt-2 text-xs', overdue ? 'font-medium text-destructive' : 'text-muted-foreground')}>

@@ -5,6 +5,7 @@ import type { Task } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { formatDate, isOverdue } from '@/lib/task-helpers';
 import { priorityClasses, statusClasses, STATUS_LABELS } from '@/lib/constants';
+import { TaskRichContent } from './TaskRichContent';
 
 export function TaskListItem({ task, onToggle, onEdit, onDelete, onView, highlighted, readOnly = false }: {
   task: Task; onToggle: () => void; onEdit: () => void; onDelete: () => void; onView: () => void; highlighted?: boolean; readOnly?: boolean;
@@ -37,8 +38,8 @@ export function TaskListItem({ task, onToggle, onEdit, onDelete, onView, highlig
             {STATUS_LABELS[task.status]}
           </span>
         </div>
-        {task.description && (
-          <p className="mt-0.5 line-clamp-2 text-sm text-muted-foreground">{task.description}</p>
+        {(task.description || task.links.length > 0) && (
+          <TaskRichContent className="mt-0.5" description={task.description} links={task.links} compact />
         )}
         {task.dueDate && (
           <p className={cn('mt-1 text-xs', overdue ? 'font-medium text-destructive' : 'text-muted-foreground')}>

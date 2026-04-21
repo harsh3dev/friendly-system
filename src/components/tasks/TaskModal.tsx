@@ -14,9 +14,9 @@ type Props = {
 
 export function TaskModal({ task, onSubmit, onClose }: Props) {
   return (
-    <Modal onClose={onClose} className="max-w-lg">
+    <Modal onClose={onClose} className="max-w-lg max-h-[80vh]">
       {close => (
-        <div className="w-full max-w-lg rounded-xl border border-border bg-card shadow-2xl">
+        <div className="flex max-h-[80vh] w-full max-w-lg flex-col overflow-hidden rounded-xl border border-border bg-card shadow-2xl">
           <div className="flex items-center justify-between border-b border-border px-5 py-4">
             <div>
               <p className="text-xs font-semibold uppercase tracking-widest text-primary">
@@ -31,12 +31,14 @@ export function TaskModal({ task, onSubmit, onClose }: Props) {
             </Button>
           </div>
 
-          <TaskEditorForm
-            task={task}
-            submitLabel={task ? 'Save changes' : 'Create task'}
-            onSubmit={onSubmit}
-            onCancel={close}
-          />
+          <div className="min-h-0 flex-1 overflow-y-auto">
+            <TaskEditorForm
+              task={task}
+              submitLabel={task ? 'Save changes' : 'Create task'}
+              onSubmit={onSubmit}
+              onCancel={close}
+            />
+          </div>
         </div>
       )}
     </Modal>

@@ -3,6 +3,7 @@ import { persist } from 'zustand/middleware';
 import type {
   Project,
   Task,
+  TaskLink,
   Status,
   TaskHistoryEntry,
   HistoryEventType,
@@ -10,8 +11,9 @@ import type {
   DashboardBackupData,
   DashboardImportResult,
 } from '@/lib/types';
+import { normalizeTaskLinks, plainTextToRichText, sanitizeRichText } from '@/lib/task-content';
 
-type TaskInput = Pick<Task, 'title' | 'description' | 'priority' | 'dueDate'>;
+type TaskInput = Pick<Task, 'title' | 'description' | 'links' | 'priority' | 'dueDate'>;
 type ProjectInput = Pick<Project, 'name' | 'description'>;
 
 interface AppState {
@@ -44,6 +46,12 @@ const isString = (value: unknown): value is string => typeof value === 'string';
 const isPriority = (value: unknown): value is Task['priority'] =>
   value === 'low' || value === 'medium' || value === 'high';
 
+const isTaskLink = (value: unknown): value is TaskLink =>
+  isRecord(value) &&
+  isString(value.id) &&
+  isString(value.label) &&
+  isString(value.url);
+
 const isStatus = (value: unknown): value is Status =>
   value === 'todo' || value === 'in-progress' || value === 'done';
 
@@ -72,6 +80,8 @@ function validateTask(value: unknown): value is Task {
     isString(value.projectId) &&
     isString(value.title) &&
     isString(value.description) &&
+    Array.isArray(value.links) &&
+    value.links.every(isTaskLink) &&
     isPriority(value.priority) &&
     isString(value.dueDate) &&
     isStatus(value.status) &&
@@ -218,7 +228,17 @@ export const useAppStore = create<AppState>()(
         const id = crypto.randomUUID();
         const createdAt = new Date().toISOString();
         set((s) => ({
-          tasks: [...s.tasks, { ...data, id, status: 'todo' as const, createdAt }],
+          tasks: [
+            ...s.tasks,
+            {
+              ...data,
+              description: sanitizeRichText(data.description),
+              links: normalizeTaskLinks(data.links),
+              id,
+              status: 'todo' as const,
+              createdAt,
+            },
+          ],
           taskHistory: [...s.taskHistory, makeEntry(id, 'created')],
         }));
       },
@@ -236,7 +256,16 @@ export const useAppStore = create<AppState>()(
         if (data.dueDate !== old.dueDate)
           newEntries.push(makeEntry(id, 'due_date_changed', old.dueDate, data.dueDate));
         set((s) => ({
-          tasks: s.tasks.map((t) => (t.id === id ? { ...t, ...data } : t)),
+          tasks: s.tasks.map((t) =>
+            t.id === id
+              ? {
+                  ...t,
+                  ...data,
+                  description: sanitizeRichText(data.description),
+                  links: normalizeTaskLinks(data.links),
+                }
+              : t,
+          ),
           taskHistory: [...s.taskHistory, ...newEntries],
         }));
       },
@@ -268,9 +297,11 @@ export const useAppStore = create<AppState>()(
     }),
     {
       name: 'taskapp',
-      version: 2,
+      version: 3,
       migrate(persistedState: unknown, version: number) {
-        const state = persistedState as AppState & { tasks: Array<Task & { status: string }> };
+        const state = persistedState as AppState & {
+          tasks: Array<Task & { status: string; links?: TaskLink[] }>;
+        };
         if (version === 0) {
           state.tasks = state.tasks.map((t) => ({
             ...t,
@@ -279,6 +310,19 @@ export const useAppStore = create<AppState>()(
         }
         if (version < 2) {
           state.taskHistory = [];
+        }
+        if (version < 3) {
+          state.tasks = state.tasks.map((t) => ({
+            ...t,
+            description: plainTextToRichText(t.description),
+            links: normalizeTaskLinks(t.links ?? []),
+          }));
+        } else {
+          state.tasks = state.tasks.map((t) => ({
+            ...t,
+            description: sanitizeRichText(t.description),
+            links: normalizeTaskLinks(t.links ?? []),
+          }));
         }
         return state;
       },

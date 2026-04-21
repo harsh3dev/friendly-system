@@ -2,6 +2,12 @@ export type Priority = 'low' | 'medium' | 'high';
 export type Status = 'todo' | 'in-progress' | 'done';
 export type ViewMode = 'list' | 'card' | 'kanban';
 
+export interface TaskLink {
+  id: string;
+  label: string;
+  url: string;
+}
+
 export interface Project {
   id: string;
   name: string;
@@ -14,6 +20,7 @@ export interface Task {
   projectId: string;
   title: string;
   description: string;
+  links: TaskLink[];
   priority: Priority;
   dueDate: string;
   status: Status;

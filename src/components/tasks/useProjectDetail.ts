@@ -4,6 +4,7 @@ import { useAppStore } from '@/store';
 import { useOfflineStatus } from '@/components/offline/offline-provider';
 import type { Task, TaskFilters, ViewMode, Status } from '@/lib/types';
 import type { TaskFormData } from '@/components/tasks/TaskEditorForm';
+import { richTextToPlainText } from '@/lib/task-content';
 
 export function useProjectDetail() {
   const { projectId, taskId } = useParams<{ projectId: string; taskId?: string }>();
@@ -50,7 +51,9 @@ export function useProjectDetail() {
   const filteredTasks = useMemo(() => projectTasks.filter(task => {
     if (filters.search) {
       const q = filters.search.toLowerCase();
-      if (!task.title.toLowerCase().includes(q) && !task.description.toLowerCase().includes(q)) return false;
+      const description = richTextToPlainText(task.description).toLowerCase();
+      const links = task.links.flatMap(link => [link.label, link.url]).join(' ').toLowerCase();
+      if (!task.title.toLowerCase().includes(q) && !description.includes(q) && !links.includes(q)) return false;
     }
     if (filters.status !== 'all' && task.status !== filters.status) return false;
     if (filters.priority !== 'all' && task.priority !== filters.priority) return false;
@@ -60,7 +63,9 @@ export function useProjectDetail() {
   const kanbanTasks = useMemo(() => projectTasks.filter(task => {
     if (filters.search) {
       const q = filters.search.toLowerCase();
-      if (!task.title.toLowerCase().includes(q) && !task.description.toLowerCase().includes(q)) return false;
+      const description = richTextToPlainText(task.description).toLowerCase();
+      const links = task.links.flatMap(link => [link.label, link.url]).join(' ').toLowerCase();
+      if (!task.title.toLowerCase().includes(q) && !description.includes(q) && !links.includes(q)) return false;
     }
     if (filters.priority !== 'all' && task.priority !== filters.priority) return false;
     return true;

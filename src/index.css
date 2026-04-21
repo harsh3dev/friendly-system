@@ -159,3 +159,64 @@
     @apply font-sans;
     }
 }
+
+.rsw-editor.rsw-task-shell {
+  border: 1px solid var(--border) !important;
+}
+
+.rsw-task-shell .rsw-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  border-bottom: 1px solid var(--border);
+  background: color-mix(in oklab, var(--card) 92%, transparent);
+  padding: 0.5rem 0.75rem;
+}
+
+.rsw-task-shell .rsw-btn {
+  display: inline-flex;
+  min-width: 2rem;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  background: var(--card);
+  color: var(--foreground);
+  padding: 0.25rem 0.5rem;
+  transition: border-color 150ms ease, color 150ms ease, background-color 150ms ease;
+}
+
+.rsw-task-shell .rsw-btn:hover {
+  border-color: color-mix(in oklab, var(--primary) 30%, var(--border));
+  color: var(--primary);
+}
+
+.rsw-task-shell .rsw-btn[aria-pressed='true'] {
+  border-color: color-mix(in oklab, var(--primary) 42%, var(--border));
+  background: color-mix(in oklab, var(--primary) 10%, var(--card));
+  color: var(--primary);
+}
+
+.rsw-task-shell .rsw-separator {
+  width: 1px;
+  margin: 0.125rem 0;
+  background: var(--border);
+}
+
+.rsw-task-shell .rsw-ce {
+  min-height: inherit;
+}
+
+.rsw-task-shell .rsw-ce:empty:before {
+  color: var(--muted-foreground);
+}
+
+.rsw-task-editor ul {
+  list-style: disc;
+  padding-left: 1.5rem;
+}
+
+.rsw-task-editor ol {
+  list-style: decimal;
+  padding-left: 1.5rem;
+}

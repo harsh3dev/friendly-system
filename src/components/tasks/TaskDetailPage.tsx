@@ -8,6 +8,7 @@ import { formatDate, isOverdue } from '@/lib/task-helpers';
 import { priorityClasses, statusClasses, STATUS_LABELS } from '@/lib/constants';
 import { TaskDetailContent } from './TaskDetailContent';
 import { TaskEditorForm } from './TaskEditorForm';
+import { TaskRichContent } from './TaskRichContent';
 
 const STATUS_OPTIONS: Status[] = ['todo', 'in-progress', 'done'];
 
@@ -161,11 +162,7 @@ export function TaskDetailPage({
 
               <div className="rounded-3xl border border-border bg-card p-6 shadow-sm sm:p-7">
                 <p className="text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">Description</p>
-                {task.description ? (
-                  <p className="mt-4 whitespace-pre-wrap text-base leading-8 text-foreground">{task.description}</p>
-                ) : (
-                  <p className="mt-4 text-base italic text-muted-foreground">No description provided.</p>
-                )}
+                <TaskRichContent className="mt-4" description={task.description} links={task.links} />
               </div>
             </div>
           )}

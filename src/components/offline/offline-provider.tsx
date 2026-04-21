@@ -35,6 +35,31 @@ export function OfflineStatusProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!('serviceWorker' in navigator)) return;
+    if (!import.meta.env.PROD) {
+      navigator.serviceWorker
+        .getRegistrations()
+        .then((registrations) => Promise.all(registrations.map((registration) => registration.unregister())))
+        .catch((error) => {
+          console.error('Service worker cleanup failed', error);
+        });
+
+      if ('caches' in window) {
+        caches
+          .keys()
+          .then((keys) =>
+            Promise.all(
+              keys
+                .filter((key) => key.startsWith('taskapp-shell'))
+                .map((key) => caches.delete(key)),
+            ),
+          )
+          .catch((error) => {
+            console.error('Service worker cache cleanup failed', error);
+          });
+      }
+
+      return;
+    }
 
     navigator.serviceWorker.register('/sw.js').catch((error) => {
       console.error('Service worker registration failed', error);
