@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { Task, Status } from '@/lib/types';
 import type { TaskFormData } from './TaskEditorForm';
 import { Button } from '@/components/ui/button';
@@ -13,6 +13,7 @@ const STATUS_OPTIONS: Status[] = ['todo', 'in-progress', 'done'];
 
 type Props = {
   task: Task;
+  readOnly?: boolean;
   onBack: () => void;
   onDelete: () => void;
   onSave: (data: TaskFormData) => void;
@@ -21,6 +22,7 @@ type Props = {
 
 export function TaskDetailPage({
   task,
+  readOnly = false,
   onBack,
   onDelete,
   onSave,
@@ -28,6 +30,10 @@ export function TaskDetailPage({
 }: Props) {
   const [isEditing, setIsEditing] = useState(false);
   const overdue = isOverdue(task.dueDate, task.status);
+
+  useEffect(() => {
+    if (readOnly) setIsEditing(false);
+  }, [readOnly]);
 
   return (
     <div className="space-y-8">
@@ -72,21 +78,23 @@ export function TaskDetailPage({
           </div>
 
           <div className="flex flex-wrap gap-2">
-            {!isEditing && (
+            {!isEditing && !readOnly && (
               <Button onClick={() => setIsEditing(true)} type="button">
                 <IconWrapper name="Pencil" className="size-4" tooltip={null} />
                 Edit task
               </Button>
             )}
-            <Button
-              variant="outline"
-              className="border-destructive/30 text-destructive hover:bg-destructive/5 hover:text-destructive"
-              onClick={onDelete}
-              type="button"
-            >
-              <IconWrapper name="Trash2" className="size-4" tooltip={null} />
-              Delete task
-            </Button>
+            {!readOnly && (
+              <Button
+                variant="outline"
+                className="border-destructive/30 text-destructive hover:bg-destructive/5 hover:text-destructive"
+                onClick={onDelete}
+                type="button"
+              >
+                <IconWrapper name="Trash2" className="size-4" tooltip={null} />
+                Delete task
+              </Button>
+            )}
           </div>
         </div>
 
@@ -95,12 +103,16 @@ export function TaskDetailPage({
             <button
               key={status}
               type="button"
-              onClick={() => onStatusChange(status)}
+              onClick={() => {
+                if (!readOnly) onStatusChange(status);
+              }}
+              disabled={readOnly}
               className={cn(
                 'rounded-2xl border px-4 py-3 text-left transition-colors',
                 task.status === status
                   ? 'border-primary/40 bg-primary/8'
                   : 'border-border bg-background/50 hover:border-primary/20 hover:bg-background',
+                readOnly && 'cursor-not-allowed opacity-70 hover:border-border hover:bg-background/50',
               )}
             >
               <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Status</p>
@@ -122,6 +134,7 @@ export function TaskDetailPage({
                 task={task}
                 layout="page"
                 submitLabel="Save changes"
+                disabled={readOnly}
                 onSubmit={(data) => {
                   onSave(data);
                   setIsEditing(false);

@@ -5,13 +5,14 @@ import { KanbanCard } from './KanbanCard';
 import { cn } from '@/lib/utils';
 import { KANBAN_COLUMNS } from '@/lib/constants';
 
-export const KanbanBoard = ({ tasks, onEdit, onDelete, onView, onStatusChange, highlightedTaskId }: {
+export const KanbanBoard = ({ tasks, onEdit, onDelete, onView, onStatusChange, highlightedTaskId, readOnly = false }: {
   tasks: Task[];
   onEdit: (task: Task) => void;
   onDelete: (taskId: string) => void;
   onView: (task: Task) => void;
   onStatusChange: (taskId: string, status: Status) => void;
   highlightedTaskId?: string | null;
+  readOnly?: boolean;
 }) => {
   const [dragTaskId, setDragTaskId] = useState<string | null>(null);
   const [dragOverCol, setDragOverCol] = useState<Status | null>(null);
@@ -22,11 +23,13 @@ export const KanbanBoard = ({ tasks, onEdit, onDelete, onView, onStatusChange, h
   };
 
   const handleDragOver = (colStatus: Status) => (e: DragEvent) => {
+    if (readOnly) return;
     e.preventDefault();
     setDragOverCol(colStatus);
   };
 
   const handleDrop = (colStatus: Status) => (e: DragEvent) => {
+    if (readOnly) return;
     e.preventDefault();
     if (dragTaskId) {
       const task = tasks.find(t => t.id === dragTaskId);
@@ -37,6 +40,7 @@ export const KanbanBoard = ({ tasks, onEdit, onDelete, onView, onStatusChange, h
   };
 
   const handleDragStart = (taskId: string) => {
+    if (readOnly) return;
     setDragTaskId(taskId);
   };
 
@@ -72,6 +76,7 @@ export const KanbanBoard = ({ tasks, onEdit, onDelete, onView, onStatusChange, h
                 <KanbanCard
                   key={task.id}
                   task={task}
+                  readOnly={readOnly}
                   highlighted={task.id === highlightedTaskId}
                   onDragStart={() => handleDragStart(task.id)}
                   onEdit={() => onEdit(task)}

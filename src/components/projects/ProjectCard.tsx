@@ -2,9 +2,9 @@ import { Button } from '@/components/ui/button';
 import { IconWrapper } from '@/components/ui/icon-wrapper';
 import type { Project } from '@/lib/types';
 
-export function ProjectCard({ project, totalTasks, activeTasks, onSelect, onEdit, onDelete }: {
+export function ProjectCard({ project, totalTasks, activeTasks, onSelect, onEdit, onDelete, readOnly = false }: {
   project: Project; totalTasks: number; activeTasks: number;
-  onSelect: () => void; onEdit: () => void; onDelete: () => void;
+  onSelect: () => void; onEdit: () => void; onDelete: () => void; readOnly?: boolean;
 }) {
   return (
     <div
@@ -15,17 +15,19 @@ export function ProjectCard({ project, totalTasks, activeTasks, onSelect, onEdit
         <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10">
           <IconWrapper name="FolderOpen" className="size-5 text-primary" tooltip={null} />
         </div>
-        <div
-          className="flex items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100"
-          onClick={e => e.stopPropagation()}
-        >
-          <Button variant="ghost" size="icon-xs" onClick={onEdit}>
-            <IconWrapper name="Pencil" className="size-3.5" tooltip="Edit project" />
-          </Button>
-          <Button variant="ghost" size="icon-xs" onClick={onDelete} className="text-destructive hover:text-destructive">
-            <IconWrapper name="Trash2" className="size-3.5" tooltip="Delete project" />
-          </Button>
-        </div>
+        {!readOnly && (
+          <div
+            className="flex items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100"
+            onClick={e => e.stopPropagation()}
+          >
+            <Button variant="ghost" size="icon-xs" onClick={onEdit}>
+              <IconWrapper name="Pencil" className="size-3.5" tooltip="Edit project" />
+            </Button>
+            <Button variant="ghost" size="icon-xs" onClick={onDelete} className="text-destructive hover:text-destructive">
+              <IconWrapper name="Trash2" className="size-3.5" tooltip="Delete project" />
+            </Button>
+          </div>
+        )}
       </div>
       <p className="font-semibold">{project.name}</p>
       {project.description && (

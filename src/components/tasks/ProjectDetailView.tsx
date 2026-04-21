@@ -7,6 +7,7 @@ import { TaskModal } from './TaskModal';
 import { TaskDetailModal } from './TaskDetailModal';
 import { TaskDetailPage } from './TaskDetailPage';
 import { KanbanBoard } from '@/components/kanban/KanbanBoard';
+import { OfflineBanner } from '@/components/offline/OfflineBanner';
 import { StatCard } from '@/components/ui/stat-card';
 import { ThemeBtn } from '@/components/ui/theme-btn';
 import { DeleteDialog } from '@/components/ui/delete-dialog';
@@ -22,7 +23,7 @@ export function ProjectDetailView() {
     detailTask, routeTask, isTaskRoute, openDetailTask, closeDetailTask,
     deleteConfirm, confirmDeleteTask, cancelDeleteTask, handleDeleteTask,
     handleToggleTask, handleStatusChange, handleUpdateRouteTask,
-    navigateToProject, navigateHome,
+    navigateToProject, navigateHome, isOffline,
   } = useProjectDetail();
 
   if (!currentProject) return <Navigate to="/" replace />;
@@ -36,17 +37,21 @@ export function ProjectDetailView() {
           </Button>
           <span className="flex-1 truncate font-semibold">{currentProject.name}</span>
           <ThemeBtn />
-          <Button size="sm" onClick={openCreateTask}>
-            <IconWrapper name="Plus" className="size-4" tooltip={null} />
-            New Task
-          </Button>
+          {!isOffline && (
+            <Button size="sm" onClick={openCreateTask}>
+              <IconWrapper name="Plus" className="size-4" tooltip={null} />
+              New Task
+            </Button>
+          )}
         </div>
       </header>
 
       <main className="mx-auto max-w-5xl space-y-5 px-4 py-6">
+        {isOffline && <OfflineBanner />}
         {isTaskRoute && routeTask ? (
           <TaskDetailPage
             task={routeTask}
+            readOnly={isOffline}
             onBack={navigateToProject}
             onSave={(data) => handleUpdateRouteTask(routeTask.id, data)}
             onDelete={() => confirmDeleteTask(routeTask.id)}
@@ -65,6 +70,7 @@ export function ProjectDetailView() {
             {viewMode === 'kanban' ? (
               <KanbanBoard
                 tasks={kanbanTasks}
+                readOnly={isOffline}
                 onEdit={openEditTask}
                 onDelete={confirmDeleteTask}
                 onView={openDetailTask}
@@ -79,7 +85,7 @@ export function ProjectDetailView() {
                 <p className="text-sm text-muted-foreground">
                   {hasFilters ? 'Try adjusting your search or filters' : 'Add your first task to this project'}
                 </p>
-                {!hasFilters && (
+                {!hasFilters && !isOffline && (
                   <Button className="mt-2" onClick={openCreateTask}>
                     <IconWrapper name="Plus" className="size-4" tooltip={null} />
                     New Task
@@ -92,6 +98,7 @@ export function ProjectDetailView() {
                   <TaskListItem
                     key={task.id}
                     task={task}
+                    readOnly={isOffline}
                     onToggle={() => handleToggleTask(task.id)}
                     onEdit={() => openEditTask(task)}
                     onDelete={() => confirmDeleteTask(task.id)}
@@ -105,6 +112,7 @@ export function ProjectDetailView() {
                   <TaskCardItem
                     key={task.id}
                     task={task}
+                    readOnly={isOffline}
                     onToggle={() => handleToggleTask(task.id)}
                     onEdit={() => openEditTask(task)}
                     onDelete={() => confirmDeleteTask(task.id)}
@@ -120,6 +128,7 @@ export function ProjectDetailView() {
       {detailTask && (
         <TaskDetailModal
           task={detailTask}
+          readOnly={isOffline}
           onEdit={() => { closeDetailTask(); openEditTask(detailTask); }}
           onDelete={() => { closeDetailTask(); confirmDeleteTask(detailTask.id); }}
           onClose={closeDetailTask}

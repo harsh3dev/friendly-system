@@ -11,6 +11,7 @@ type Props = {
   onSubmit: (data: TaskFormData) => void;
   onCancel?: () => void;
   layout?: 'modal' | 'page';
+  disabled?: boolean;
 };
 
 export function TaskEditorForm({
@@ -19,6 +20,7 @@ export function TaskEditorForm({
   onSubmit,
   onCancel,
   layout = 'modal',
+  disabled = false,
 }: Props) {
   const [form, setForm] = useState({
     title: task?.title ?? '',
@@ -62,6 +64,7 @@ export function TaskEditorForm({
         <input
           id="task-title"
           type="text"
+          disabled={disabled}
           value={form.title}
           onChange={e => {
             setTitleError('');
@@ -83,6 +86,7 @@ export function TaskEditorForm({
         </label>
         <textarea
           id="task-desc"
+          disabled={disabled}
           value={form.description}
           onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
           placeholder="Context, expected output, notes..."
@@ -98,6 +102,7 @@ export function TaskEditorForm({
           </label>
           <select
             id="task-priority"
+            disabled={disabled}
             value={form.priority}
             onChange={e => setForm(f => ({ ...f, priority: e.target.value as Priority }))}
             className="cursor-pointer rounded-lg border border-border bg-background px-3 py-2.5 text-sm text-foreground outline-none focus:border-primary"
@@ -115,6 +120,7 @@ export function TaskEditorForm({
           <input
             id="task-due"
             type="date"
+            disabled={disabled}
             value={form.dueDate}
             onChange={e => setForm(f => ({ ...f, dueDate: e.target.value }))}
             className="rounded-lg border border-border bg-background px-3 py-2.5 text-sm text-foreground outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-primary/30 dark:scheme-dark"
@@ -123,7 +129,7 @@ export function TaskEditorForm({
       </div>
 
       <div className="flex flex-wrap gap-2 pt-1">
-        <Button type="submit">{submitLabel}</Button>
+        <Button type="submit" disabled={disabled}>{submitLabel}</Button>
         {onCancel && (
           <Button type="button" variant="outline" onClick={onCancel}>
             Cancel

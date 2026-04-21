@@ -1,16 +1,18 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAppStore } from '@/store';
+import { useOfflineStatus } from '@/components/offline/offline-provider';
 import type { Task, TaskFilters, ViewMode, Status } from '@/lib/types';
 import type { TaskFormData } from '@/components/tasks/TaskEditorForm';
 
 export function useProjectDetail() {
   const { projectId, taskId } = useParams<{ projectId: string; taskId?: string }>();
   const navigate = useNavigate();
+  const { isOffline } = useOfflineStatus();
   const { projects, tasks, addTask, updateTask, updateTaskStatus, toggleTask, deleteTask } = useAppStore();
 
   const [filters, setFilters] = useState<TaskFilters>({ search: '', status: 'all', priority: 'all' });
-  const [viewMode, setViewMode] = useState<ViewMode>('list');
+  const [viewMode, setViewMode] = useState<ViewMode>('kanban');
   const [taskModal, setTaskModal] = useState<{ open: boolean; task?: Task }>({ open: false });
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [detailTask, setDetailTask] = useState<Task | null>(null);
@@ -27,6 +29,12 @@ export function useProjectDetail() {
     if (!isTaskRoute || routeTask || !projectId) return;
     navigate(`/projects/${projectId}`, { replace: true });
   }, [isTaskRoute, routeTask, projectId, navigate]);
+
+  useEffect(() => {
+    if (!isOffline) return;
+    setTaskModal({ open: false });
+    setDeleteConfirm(null);
+  }, [isOffline]);
 
   const projectTasks = useMemo(() =>
     tasks.filter(t => t.projectId === projectId),
@@ -60,14 +68,21 @@ export function useProjectDetail() {
 
   const hasFilters = filters.search !== '' || filters.status !== 'all' || filters.priority !== 'all';
 
-  const openCreateTask = () => { setTaskModal({ open: true }); };
-  const openEditTask = (task: Task) => { setTaskModal({ open: true, task }); };
+  const openCreateTask = () => {
+    if (isOffline) return;
+    setTaskModal({ open: true });
+  };
+  const openEditTask = (task: Task) => {
+    if (isOffline) return;
+    setTaskModal({ open: true, task });
+  };
   const closeTaskModal = () => { setTaskModal({ open: false }); };
 
   const openDetailTask = (task: Task) => { setDetailTask(task); };
   const closeDetailTask = () => { setDetailTask(null); };
 
   const handleSaveTask = (data: TaskFormData) => {
+    if (isOffline) return;
     if (taskModal.task) {
       updateTask(taskModal.task.id, data);
     } else if (projectId) {
@@ -77,13 +92,18 @@ export function useProjectDetail() {
   };
 
   const handleUpdateRouteTask = (id: string, data: TaskFormData) => {
+    if (isOffline) return;
     updateTask(id, data);
   };
 
-  const confirmDeleteTask = (id: string) => { setDeleteConfirm(id); };
+  const confirmDeleteTask = (id: string) => {
+    if (isOffline) return;
+    setDeleteConfirm(id);
+  };
   const cancelDeleteTask = () => { setDeleteConfirm(null); };
 
   const handleDeleteTask = () => {
+    if (isOffline) return;
     if (deleteConfirm) {
       const deletedTaskId = deleteConfirm;
       deleteTask(deletedTaskId);
@@ -95,8 +115,14 @@ export function useProjectDetail() {
     }
   };
 
-  const handleToggleTask = (id: string) => { toggleTask(id); };
-  const handleStatusChange = (id: string, status: Status) => { updateTaskStatus(id, status); };
+  const handleToggleTask = (id: string) => {
+    if (isOffline) return;
+    toggleTask(id);
+  };
+  const handleStatusChange = (id: string, status: Status) => {
+    if (isOffline) return;
+    updateTaskStatus(id, status);
+  };
   const navigateToProject = () => {
     if (projectId) {
       navigate(`/projects/${projectId}`);
@@ -135,5 +161,6 @@ export function useProjectDetail() {
     handleStatusChange,
     navigateToProject,
     navigateHome,
+    isOffline,
   };
 }

@@ -1,6 +1,7 @@
 import { useProjectsView } from './useProjectsView';
 import { ProjectCard } from './ProjectCard';
 import { ProjectModal } from './ProjectModal';
+import { OfflineBanner } from '@/components/offline/OfflineBanner';
 import { StatCard } from '@/components/ui/stat-card';
 import { ThemeBtn } from '@/components/ui/theme-btn';
 import { DeleteDialog } from '@/components/ui/delete-dialog';
@@ -12,7 +13,7 @@ export function ProjectsView() {
     projects, globalStats, projectStats,
     projectModal, openCreateModal, openEditModal, closeModal, handleSaveProject,
     deleteConfirm, confirmDelete, cancelDelete, handleDeleteProject,
-    navigateToProject,
+    navigateToProject, isOffline,
   } = useProjectsView();
 
   return (
@@ -25,15 +26,18 @@ export function ProjectsView() {
           </div>
           <div className="flex items-center gap-2">
             <ThemeBtn />
-            <Button size="sm" onClick={openCreateModal}>
-              <IconWrapper name="Plus" className="size-4" tooltip={null} />
-              New Project
-            </Button>
+            {!isOffline && (
+              <Button size="sm" onClick={openCreateModal}>
+                <IconWrapper name="Plus" className="size-4" tooltip={null} />
+                New Project
+              </Button>
+            )}
           </div>
         </div>
       </header>
 
       <main className="mx-auto max-w-5xl space-y-5 px-4 py-6">
+        {isOffline && <OfflineBanner />}
         <div className="grid grid-cols-3 gap-3 sm:gap-4">
           <StatCard label="Projects" value={globalStats.projects} colorClass="text-foreground" icon={<IconWrapper name="Layers" className="size-3.5" tooltip={null} />} />
           <StatCard label="Total Tasks" value={globalStats.total} colorClass="text-foreground" icon={<IconWrapper name="ClipboardList" className="size-3.5" tooltip={null} />} />
@@ -45,10 +49,12 @@ export function ProjectsView() {
             <div className="text-5xl">🗂️</div>
             <p className="font-semibold text-lg">No projects yet</p>
             <p className="text-sm text-muted-foreground">Create your first project to start managing tasks</p>
-            <Button className="mt-2" onClick={openCreateModal}>
-              <IconWrapper name="Plus" className="size-4" tooltip={null} />
-              New Project
-            </Button>
+            {!isOffline && (
+              <Button className="mt-2" onClick={openCreateModal}>
+                <IconWrapper name="Plus" className="size-4" tooltip={null} />
+                New Project
+              </Button>
+            )}
           </div>
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -60,6 +66,7 @@ export function ProjectsView() {
                   project={project}
                   totalTasks={s.total}
                   activeTasks={s.active}
+                  readOnly={isOffline}
                   onSelect={() => navigateToProject(project.id)}
                   onEdit={() => openEditModal(project)}
                   onDelete={() => confirmDelete(project.id)}

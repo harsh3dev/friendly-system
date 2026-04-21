@@ -6,8 +6,8 @@ import { cn } from '@/lib/utils';
 import { formatDate, isOverdue } from '@/lib/task-helpers';
 import { priorityClasses, statusClasses, STATUS_LABELS } from '@/lib/constants';
 
-export function TaskCardItem({ task, onToggle, onEdit, onDelete, onView, highlighted }: {
-  task: Task; onToggle: () => void; onEdit: () => void; onDelete: () => void; onView: () => void; highlighted?: boolean;
+export function TaskCardItem({ task, onToggle, onEdit, onDelete, onView, highlighted, readOnly = false }: {
+  task: Task; onToggle: () => void; onEdit: () => void; onDelete: () => void; onView: () => void; highlighted?: boolean; readOnly?: boolean;
 }) {
   const overdue = isOverdue(task.dueDate, task.status);
   const done = task.status === 'done';
@@ -33,14 +33,16 @@ export function TaskCardItem({ task, onToggle, onEdit, onDelete, onView, highlig
             {STATUS_LABELS[task.status]}
           </span>
         </div>
-        <div className="flex items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
-          <Button variant="ghost" size="icon-xs" onClick={e => { e.stopPropagation(); onEdit(); }}>
-            <IconWrapper name="Pencil" className="size-3.5" tooltip="Edit task" />
-          </Button>
-          <Button variant="ghost" size="icon-xs" onClick={e => { e.stopPropagation(); onDelete(); }} className="text-destructive hover:text-destructive">
-            <IconWrapper name="Trash2" className="size-3.5" tooltip="Delete task" />
-          </Button>
-        </div>
+        {!readOnly && (
+          <div className="flex items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
+            <Button variant="ghost" size="icon-xs" onClick={e => { e.stopPropagation(); onEdit(); }}>
+              <IconWrapper name="Pencil" className="size-3.5" tooltip="Edit task" />
+            </Button>
+            <Button variant="ghost" size="icon-xs" onClick={e => { e.stopPropagation(); onDelete(); }} className="text-destructive hover:text-destructive">
+              <IconWrapper name="Trash2" className="size-3.5" tooltip="Delete task" />
+            </Button>
+          </div>
+        )}
       </div>
       <p className={cn('font-medium leading-snug', done && 'line-through text-muted-foreground')}>
         {task.title}
@@ -54,7 +56,7 @@ export function TaskCardItem({ task, onToggle, onEdit, onDelete, onView, highlig
             {overdue ? '⚠ ' : ''}{formatDate(task.dueDate)}
           </p>
         ) : <span />}
-        <CircleToggle done={done} onClick={e => { e.stopPropagation(); onToggle(); }} />
+        {!readOnly && <CircleToggle done={done} onClick={e => { e.stopPropagation(); onToggle(); }} />}
       </div>
     </div>
   );

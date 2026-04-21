@@ -6,8 +6,8 @@ import { cn } from '@/lib/utils';
 import { formatDate, isOverdue } from '@/lib/task-helpers';
 import { priorityClasses, statusClasses, STATUS_LABELS } from '@/lib/constants';
 
-export function TaskListItem({ task, onToggle, onEdit, onDelete, onView, highlighted }: {
-  task: Task; onToggle: () => void; onEdit: () => void; onDelete: () => void; onView: () => void; highlighted?: boolean;
+export function TaskListItem({ task, onToggle, onEdit, onDelete, onView, highlighted, readOnly = false }: {
+  task: Task; onToggle: () => void; onEdit: () => void; onDelete: () => void; onView: () => void; highlighted?: boolean; readOnly?: boolean;
 }) {
   const overdue = isOverdue(task.dueDate, task.status);
   const done = task.status === 'done';
@@ -24,7 +24,7 @@ export function TaskListItem({ task, onToggle, onEdit, onDelete, onView, highlig
         highlighted && 'ring-2 ring-primary/60 border-primary/50 [animation:task-highlight_1.4s_ease-out]',
       )}
     >
-      <CircleToggle done={done} onClick={e => { e.stopPropagation(); onToggle(); }} />
+      {!readOnly && <CircleToggle done={done} onClick={e => { e.stopPropagation(); onToggle(); }} />}
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2">
           <p className={cn('font-medium', done && 'line-through text-muted-foreground')}>
@@ -46,14 +46,16 @@ export function TaskListItem({ task, onToggle, onEdit, onDelete, onView, highlig
           </p>
         )}
       </div>
-      <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
-        <Button variant="ghost" size="icon-xs" onClick={e => { e.stopPropagation(); onEdit(); }}>
-          <IconWrapper name="Pencil" className="size-3.5" tooltip="Edit task" />
-        </Button>
-        <Button variant="ghost" size="icon-xs" onClick={e => { e.stopPropagation(); onDelete(); }} className="text-destructive hover:text-destructive">
-          <IconWrapper name="Trash2" className="size-3.5" tooltip="Delete task" />
-        </Button>
-      </div>
+      {!readOnly && (
+        <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
+          <Button variant="ghost" size="icon-xs" onClick={e => { e.stopPropagation(); onEdit(); }}>
+            <IconWrapper name="Pencil" className="size-3.5" tooltip="Edit task" />
+          </Button>
+          <Button variant="ghost" size="icon-xs" onClick={e => { e.stopPropagation(); onDelete(); }} className="text-destructive hover:text-destructive">
+            <IconWrapper name="Trash2" className="size-3.5" tooltip="Delete task" />
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

@@ -48,12 +48,13 @@ function eventLabel(event: HistoryEventType, from?: string, to?: string): string
 
 type Props = {
   task: Task;
+  readOnly?: boolean;
   onEdit: () => void;
   onDelete: () => void;
   onClose: () => void;
 };
 
-export function TaskDetailModal({ task, onEdit, onDelete, onClose }: Props) {
+export function TaskDetailModal({ task, readOnly = false, onEdit, onDelete, onClose }: Props) {
   const taskHistory = useAppStore((s) => s.taskHistory);
   const history = useMemo(
     () =>
@@ -161,31 +162,33 @@ export function TaskDetailModal({ task, onEdit, onDelete, onClose }: Props) {
             </div>
           </div>
 
-          <div className="flex gap-2 border-t border-border px-5 py-4">
-            <Button
-              className="flex-1"
-              onClick={() => {
-                close();
-                setTimeout(onEdit, 200);
-              }}
-              type="button"
-            >
-              <IconWrapper name="Pencil" className="size-4" tooltip={null} />
-              Edit task
-            </Button>
-            <Button
-              variant="outline"
-              className="border-destructive/30 text-destructive hover:bg-destructive/5 hover:text-destructive"
-              onClick={() => {
-                close();
-                setTimeout(onDelete, 200);
-              }}
-              type="button"
-            >
-              <IconWrapper name="Trash2" className="size-4" tooltip={null} />
-              Delete
-            </Button>
-          </div>
+          {!readOnly && (
+            <div className="flex gap-2 border-t border-border px-5 py-4">
+              <Button
+                className="flex-1"
+                onClick={() => {
+                  close();
+                  setTimeout(onEdit, 200);
+                }}
+                type="button"
+              >
+                <IconWrapper name="Pencil" className="size-4" tooltip={null} />
+                Edit task
+              </Button>
+              <Button
+                variant="outline"
+                className="border-destructive/30 text-destructive hover:bg-destructive/5 hover:text-destructive"
+                onClick={() => {
+                  close();
+                  setTimeout(onDelete, 200);
+                }}
+                type="button"
+              >
+                <IconWrapper name="Trash2" className="size-4" tooltip={null} />
+                Delete
+              </Button>
+            </div>
+          )}
         </div>
       )}
     </Modal>

@@ -20,6 +20,7 @@ import {
   RefreshCw,
   Flag,
   Calendar,
+  WifiOff,
 } from 'lucide-react'
 
 export const icons = {
@@ -44,6 +45,7 @@ export const icons = {
   RefreshCw,
   Flag,
   Calendar,
+  WifiOff,
 } as const
 
 export type IconName = keyof typeof icons
