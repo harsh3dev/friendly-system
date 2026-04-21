@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import type { Task, Status } from '@/lib/types';
 import type { TaskFormData } from './TaskEditorForm';
 import { Button } from '@/components/ui/button';
@@ -9,11 +9,13 @@ import { priorityClasses, statusClasses, STATUS_LABELS } from '@/lib/constants';
 import { TaskDetailContent } from './TaskDetailContent';
 import { TaskEditorForm } from './TaskEditorForm';
 import { TaskRichContent } from './TaskRichContent';
+import { LinkedTasksSection } from './LinkedTasksSection';
 
 const STATUS_OPTIONS: Status[] = ['todo', 'in-progress', 'done'];
 
 type Props = {
   task: Task;
+  projectTasks?: Task[];
   readOnly?: boolean;
   onBack: () => void;
   onDelete: () => void;
@@ -23,6 +25,7 @@ type Props = {
 
 export function TaskDetailPage({
   task,
+  projectTasks = [],
   readOnly = false,
   onBack,
   onDelete,
@@ -32,13 +35,12 @@ export function TaskDetailPage({
   const [isEditing, setIsEditing] = useState(false);
   const overdue = isOverdue(task.dueDate, task.status);
 
-  useEffect(() => {
-    if (readOnly) setIsEditing(false);
-  }, [readOnly]);
+  const enterEditing = () => { if (!readOnly) setIsEditing(true); };
+  const exitEditing = () => setIsEditing(false);
 
   return (
     <div className="space-y-8">
-      <div className="flex flex-col gap-5 rounded-3xl border border-border/70 bg-gradient-to-br from-card via-card to-card/70 p-6 shadow-sm sm:p-8">
+      <div className="flex flex-col gap-5 rounded-3xl border border-border/70 bg-linear-to-br from-card via-card to-card/70 p-6 shadow-sm sm:p-8">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div className="space-y-3">
             <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.22em] text-primary/80">
@@ -80,7 +82,7 @@ export function TaskDetailPage({
 
           <div className="flex flex-wrap gap-2">
             {!isEditing && !readOnly && (
-              <Button onClick={() => setIsEditing(true)} type="button">
+              <Button onClick={enterEditing} type="button">
                 <IconWrapper name="Pencil" className="size-4" tooltip={null} />
                 Edit task
               </Button>
@@ -133,14 +135,15 @@ export function TaskDetailPage({
               </div>
               <TaskEditorForm
                 task={task}
+                availableTasks={projectTasks.filter((t) => t.id !== task.id)}
                 layout="page"
                 submitLabel="Save changes"
                 disabled={readOnly}
                 onSubmit={(data) => {
                   onSave(data);
-                  setIsEditing(false);
+                  exitEditing();
                 }}
-                onCancel={() => setIsEditing(false)}
+                onCancel={exitEditing}
               />
             </div>
           ) : (
@@ -164,6 +167,16 @@ export function TaskDetailPage({
                 <p className="text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">Description</p>
                 <TaskRichContent className="mt-4" description={task.description} links={task.links} />
               </div>
+
+              {task.linkedTaskIds.length > 0 && (
+                <div className="rounded-3xl border border-border bg-card p-6 shadow-sm sm:p-7">
+                  <LinkedTasksSection
+                    linkedTaskIds={task.linkedTaskIds}
+                    projectId={task.projectId}
+                    allProjectTasks={projectTasks}
+                  />
+                </div>
+              )}
             </div>
           )}
         </section>

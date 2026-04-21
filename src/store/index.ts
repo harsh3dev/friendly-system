@@ -13,7 +13,7 @@ import type {
 } from '@/lib/types';
 import { normalizeTaskLinks, plainTextToRichText, sanitizeRichText } from '@/lib/task-content';
 
-type TaskInput = Pick<Task, 'title' | 'description' | 'links' | 'priority' | 'dueDate'>;
+type TaskInput = Pick<Task, 'title' | 'description' | 'links' | 'linkedTaskIds' | 'priority' | 'dueDate'>;
 type ProjectInput = Pick<Project, 'name' | 'description'>;
 
 interface AppState {
@@ -85,7 +85,9 @@ function validateTask(value: unknown): value is Task {
     isPriority(value.priority) &&
     isString(value.dueDate) &&
     isStatus(value.status) &&
-    isString(value.createdAt)
+    isString(value.createdAt) &&
+    (value.linkedTaskIds === undefined ||
+      (Array.isArray(value.linkedTaskIds) && value.linkedTaskIds.every(isString)))
   );
 }
 
@@ -124,13 +126,28 @@ function normalizeBackupPayload(payload: unknown): DashboardBackup | null {
   if (!isString(payload.exportedAt)) return null;
   if (!validateBackupData(payload.data)) return null;
 
+  // Build a per-project set of valid task IDs for linkedTaskIds sanitization
+  const taskIdsByProject = new Map<string, Set<string>>();
+  for (const task of payload.data.tasks) {
+    let set = taskIdsByProject.get(task.projectId);
+    if (!set) { set = new Set(); taskIdsByProject.set(task.projectId, set); }
+    set.add(task.id);
+  }
+
+  const sanitizedTasks: Task[] = payload.data.tasks.map((task) => ({
+    ...task,
+    linkedTaskIds: ((task.linkedTaskIds ?? []) as string[]).filter((id) =>
+      taskIdsByProject.get(task.projectId)?.has(id) && id !== task.id,
+    ),
+  }));
+
   return {
     appName: 'TaskFlow',
     schemaVersion: BACKUP_SCHEMA_VERSION,
     exportedAt: payload.exportedAt,
     data: {
       projects: payload.data.projects,
-      tasks: payload.data.tasks,
+      tasks: sanitizedTasks,
       taskHistory: payload.data.taskHistory,
     },
   };
@@ -234,6 +251,7 @@ export const useAppStore = create<AppState>()(
               ...data,
               description: sanitizeRichText(data.description),
               links: normalizeTaskLinks(data.links),
+              linkedTaskIds: data.linkedTaskIds ?? [],
               id,
               status: 'todo' as const,
               createdAt,
@@ -291,16 +309,22 @@ export const useAppStore = create<AppState>()(
 
       deleteTask: (id) =>
         set((s) => ({
-          tasks: s.tasks.filter((t) => t.id !== id),
+          tasks: s.tasks
+            .filter((t) => t.id !== id)
+            .map((t) =>
+              t.linkedTaskIds.includes(id)
+                ? { ...t, linkedTaskIds: t.linkedTaskIds.filter((lid) => lid !== id) }
+                : t,
+            ),
           taskHistory: s.taskHistory.filter((h) => h.taskId !== id),
         })),
     }),
     {
       name: 'taskapp',
-      version: 3,
+      version: 4,
       migrate(persistedState: unknown, version: number) {
         const state = persistedState as AppState & {
-          tasks: Array<Task & { status: string; links?: TaskLink[] }>;
+          tasks: Array<Task & { status: string; links?: TaskLink[]; linkedTaskIds?: string[] }>;
         };
         if (version === 0) {
           state.tasks = state.tasks.map((t) => ({
@@ -322,6 +346,12 @@ export const useAppStore = create<AppState>()(
             ...t,
             description: sanitizeRichText(t.description),
             links: normalizeTaskLinks(t.links ?? []),
+          }));
+        }
+        if (version < 4) {
+          state.tasks = state.tasks.map((t) => ({
+            ...t,
+            linkedTaskIds: t.linkedTaskIds ?? [],
           }));
         }
         return state;

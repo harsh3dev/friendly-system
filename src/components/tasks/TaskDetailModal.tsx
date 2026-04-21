@@ -9,6 +9,7 @@ import { formatDate, formatRelative, isOverdue } from '@/lib/task-helpers';
 import { priorityClasses, statusClasses, STATUS_LABELS } from '@/lib/constants';
 import { buttonVariants } from '@/components/ui/button-variants';
 import { TaskRichContent } from './TaskRichContent';
+import { LinkedTasksSection } from './LinkedTasksSection';
 
 const formatIsoDate = (iso: string) =>
   new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
@@ -49,13 +50,14 @@ function eventLabel(event: HistoryEventType, from?: string, to?: string): string
 
 type Props = {
   task: Task;
+  projectTasks?: Task[];
   readOnly?: boolean;
   onEdit: () => void;
   onDelete: () => void;
   onClose: () => void;
 };
 
-export function TaskDetailModal({ task, readOnly = false, onEdit, onDelete, onClose }: Props) {
+export function TaskDetailModal({ task, projectTasks = [], readOnly = false, onEdit, onDelete, onClose }: Props) {
   const taskHistory = useAppStore((s) => s.taskHistory);
   const history = useMemo(
     () =>
@@ -126,6 +128,15 @@ export function TaskDetailModal({ task, readOnly = false, onEdit, onDelete, onCl
                   <p className="text-sm text-foreground">{formatIsoDate(task.createdAt)}</p>
                 </div>
               </div>
+
+              {task.linkedTaskIds.length > 0 && (
+                <LinkedTasksSection
+                  linkedTaskIds={task.linkedTaskIds}
+                  projectId={task.projectId}
+                  allProjectTasks={projectTasks}
+                  onNavigate={onClose}
+                />
+              )}
               </div>
             </div>
 

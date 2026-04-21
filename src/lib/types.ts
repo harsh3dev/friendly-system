@@ -21,6 +21,7 @@ export interface Task {
   title: string;
   description: string;
   links: TaskLink[];
+  linkedTaskIds: string[];
   priority: Priority;
   dueDate: string;
   status: Status;

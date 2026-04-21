@@ -8,13 +8,15 @@ import {
   truncateRichText,
 } from '@/lib/task-content';
 import { RichTextEditor } from './RichTextEditor';
+import { LinkedTasksPicker } from './LinkedTasksPicker';
 
-export type TaskFormData = Pick<Task, 'title' | 'description' | 'links' | 'priority' | 'dueDate'>;
+export type TaskFormData = Pick<Task, 'title' | 'description' | 'links' | 'linkedTaskIds' | 'priority' | 'dueDate'>;
 
 const DESCRIPTION_CHAR_LIMIT = 1000;
 
 type Props = {
   task?: Task;
+  availableTasks?: Task[];
   submitLabel: string;
   onSubmit: (data: TaskFormData) => void;
   onCancel?: () => void;
@@ -24,6 +26,7 @@ type Props = {
 
 export function TaskEditorForm({
   task,
+  availableTasks = [],
   submitLabel,
   onSubmit,
   onCancel,
@@ -34,6 +37,7 @@ export function TaskEditorForm({
     title: task?.title ?? '',
     description: task?.description ?? '',
     links: task?.links ?? [],
+    linkedTaskIds: task?.linkedTaskIds ?? [],
     priority: (task?.priority ?? 'medium') as Priority,
     dueDate: task?.dueDate ?? '',
   });
@@ -45,6 +49,7 @@ export function TaskEditorForm({
       title: task?.title ?? '',
       description: task?.description ?? '',
       links: task?.links ?? [],
+      linkedTaskIds: task?.linkedTaskIds ?? [],
       priority: (task?.priority ?? 'medium') as Priority,
       dueDate: task?.dueDate ?? '',
     });
@@ -69,6 +74,7 @@ export function TaskEditorForm({
       title: form.title.trim(),
       description: truncateRichText(form.description, DESCRIPTION_CHAR_LIMIT),
       links: normalizeTaskLinks(form.links),
+      linkedTaskIds: form.linkedTaskIds,
       priority: form.priority,
       dueDate: form.dueDate,
     });
@@ -208,6 +214,15 @@ export function TaskEditorForm({
           </div>
         )}
       </div>
+
+      {availableTasks.length > 0 && (
+        <LinkedTasksPicker
+          availableTasks={availableTasks}
+          selectedIds={form.linkedTaskIds}
+          onChange={(linkedTaskIds) => setForm((f) => ({ ...f, linkedTaskIds }))}
+          disabled={disabled}
+        />
+      )}
 
       <div className={cn('grid gap-4', layout === 'page' ? 'sm:grid-cols-3' : 'grid-cols-2')}>
         <div className="flex flex-col gap-1.5">

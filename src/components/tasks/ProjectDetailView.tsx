@@ -17,6 +17,7 @@ import { IconWrapper } from '@/components/ui/icon-wrapper';
 export function ProjectDetailView() {
   const {
     currentProject,
+    projectTasks,
     projectTaskStats, filteredTasks, kanbanTasks, hasFilters,
     filters, setFilters, viewMode, setViewMode,
     taskModal, openCreateTask, openEditTask, closeTaskModal, handleSaveTask,
@@ -51,6 +52,7 @@ export function ProjectDetailView() {
         {isTaskRoute && routeTask ? (
           <TaskDetailPage
             task={routeTask}
+            projectTasks={projectTasks}
             readOnly={isOffline}
             onBack={navigateToProject}
             onSave={(data) => handleUpdateRouteTask(routeTask.id, data)}
@@ -128,6 +130,7 @@ export function ProjectDetailView() {
       {detailTask && (
         <TaskDetailModal
           task={detailTask}
+          projectTasks={projectTasks}
           readOnly={isOffline}
           onEdit={() => { closeDetailTask(); openEditTask(detailTask); }}
           onDelete={() => { closeDetailTask(); confirmDeleteTask(detailTask.id); }}
@@ -137,6 +140,7 @@ export function ProjectDetailView() {
       {taskModal.open && (
         <TaskModal
           task={taskModal.task}
+          projectTasks={projectTasks}
           onSubmit={handleSaveTask}
           onClose={closeTaskModal}
         />

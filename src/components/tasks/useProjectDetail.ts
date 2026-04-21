@@ -139,6 +139,7 @@ export function useProjectDetail() {
 
   return {
     currentProject,
+    projectTasks,
     projectTaskStats,
     filteredTasks,
     kanbanTasks,

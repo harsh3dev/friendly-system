@@ -8,11 +8,12 @@ export type { TaskFormData } from './TaskEditorForm';
 
 type Props = {
   task?: Task;
+  projectTasks?: Task[];
   onSubmit: (data: TaskFormData) => void;
   onClose: () => void;
 };
 
-export function TaskModal({ task, onSubmit, onClose }: Props) {
+export function TaskModal({ task, projectTasks = [], onSubmit, onClose }: Props) {
   return (
     <Modal onClose={onClose} className="max-w-lg max-h-[80vh]">
       {close => (
@@ -34,6 +35,7 @@ export function TaskModal({ task, onSubmit, onClose }: Props) {
           <div className="min-h-0 flex-1 overflow-y-auto">
             <TaskEditorForm
               task={task}
+              availableTasks={projectTasks.filter((t) => t.id !== task?.id)}
               submitLabel={task ? 'Save changes' : 'Create task'}
               onSubmit={onSubmit}
               onCancel={close}
