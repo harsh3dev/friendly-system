@@ -41,7 +41,7 @@ export function ProjectDetailView() {
           {!isOffline && (
             <Button size="sm" onClick={openCreateTask}>
               <IconWrapper name="Plus" className="size-4" tooltip={null} />
-              New Task
+              <span className="hidden sm:inline">New Task</span>
             </Button>
           )}
         </div>

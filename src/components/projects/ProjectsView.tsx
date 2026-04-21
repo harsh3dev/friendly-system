@@ -44,7 +44,7 @@ export function ProjectsView() {
             />
             <Button variant="outline" size="sm" onClick={handleExportDashboard}>
               <IconWrapper name="Download" className="size-4" tooltip={null} />
-              Export
+              <span className="hidden sm:inline">Export</span>
             </Button>
             <Button
               variant="outline"
@@ -52,13 +52,13 @@ export function ProjectsView() {
               onClick={() => fileInputRef.current?.click()}
             >
               <IconWrapper name="Upload" className="size-4" tooltip={null} />
-              Import
+              <span className="hidden sm:inline">Import</span>
             </Button>
             <ThemeBtn />
             {!isOffline && (
               <Button size="sm" onClick={openCreateModal}>
                 <IconWrapper name="Plus" className="size-4" tooltip={null} />
-                New Project
+                <span className="hidden sm:inline">New Project</span>
               </Button>
             )}
           </div>

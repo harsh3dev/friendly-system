@@ -22,7 +22,7 @@ export function TaskListItem({ task, onToggle, onEdit, onDelete, onView, highlig
       className={cn(
         'group flex cursor-pointer items-start gap-3 rounded-xl border border-border bg-card px-4 py-3 transition-all hover:shadow-sm hover:border-primary/30',
         done && 'opacity-60',
-        highlighted && 'ring-2 ring-primary/60 border-primary/50 [animation:task-highlight_1.4s_ease-out]',
+        highlighted && 'ring-2 ring-primary/60 border-primary/50 animate-[task-highlight_1.4s_ease-out]',
       )}
     >
       {!readOnly && <CircleToggle done={done} onClick={e => { e.stopPropagation(); onToggle(); }} />}
@@ -48,7 +48,7 @@ export function TaskListItem({ task, onToggle, onEdit, onDelete, onView, highlig
         )}
       </div>
       {!readOnly && (
-        <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
+        <div className="flex shrink-0 items-center gap-0.5 transition-opacity sm:opacity-0 sm:group-hover:opacity-100">
           <Button variant="ghost" size="icon-xs" onClick={e => { e.stopPropagation(); onEdit(); }}>
             <IconWrapper name="Pencil" className="size-3.5" tooltip="Edit task" />
           </Button>

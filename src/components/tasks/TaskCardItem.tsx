@@ -22,7 +22,7 @@ export function TaskCardItem({ task, onToggle, onEdit, onDelete, onView, highlig
       className={cn(
         'group flex cursor-pointer flex-col rounded-xl border border-border bg-card p-4 transition-all hover:shadow-sm hover:border-primary/30',
         done && 'opacity-60',
-        highlighted && 'ring-2 ring-primary/60 border-primary/50 [animation:task-highlight_1.4s_ease-out]',
+        highlighted && 'ring-2 ring-primary/60 border-primary/50 animate-[task-highlight_1.4s_ease-out]',
       )}
     >
       <div className="mb-3 flex items-start justify-between gap-2">
@@ -35,7 +35,7 @@ export function TaskCardItem({ task, onToggle, onEdit, onDelete, onView, highlig
           </span>
         </div>
         {!readOnly && (
-          <div className="flex items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
+          <div className="flex items-center gap-0.5 transition-opacity sm:opacity-0 sm:group-hover:opacity-100">
             <Button variant="ghost" size="icon-xs" onClick={e => { e.stopPropagation(); onEdit(); }}>
               <IconWrapper name="Pencil" className="size-3.5" tooltip="Edit task" />
             </Button>
