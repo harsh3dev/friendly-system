@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 import { Routes, Route, useNavigate, useParams, Navigate } from 'react-router-dom';
 import { useTheme } from '@/components/theme-provider';
 import { useAppStore } from '@/store';
-import type { Task, TaskFilters, ViewMode, Project } from '@/lib/types';
+import type { Task, TaskFilters, ViewMode, Project, Status } from '@/lib/types';
 import type { TaskFormData } from '@/components/tasks/TaskModal';
 import { TaskModal } from '@/components/tasks/TaskModal';
 import { ProjectModal } from '@/components/projects/ProjectModal';
@@ -19,6 +19,36 @@ const priorityClasses: Record<Task['priority'], string> = {
   low: 'bg-sky-100 text-sky-700 dark:bg-sky-950 dark:text-sky-300',
 };
 
+const KANBAN_COLUMNS: {
+  status: Status;
+  label: string;
+  dotClass: string;
+  headerClass: string;
+  countClass: string;
+}[] = [
+  {
+    status: 'todo',
+    label: 'To Do',
+    dotClass: 'bg-sky-500',
+    headerClass: 'text-sky-700 dark:text-sky-400',
+    countClass: 'bg-sky-100 text-sky-700 dark:bg-sky-950 dark:text-sky-300',
+  },
+  {
+    status: 'in-progress',
+    label: 'In Progress',
+    dotClass: 'bg-amber-500',
+    headerClass: 'text-amber-700 dark:text-amber-400',
+    countClass: 'bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300',
+  },
+  {
+    status: 'done',
+    label: 'Done',
+    dotClass: 'bg-green-500',
+    headerClass: 'text-green-700 dark:text-green-400',
+    countClass: 'bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-300',
+  },
+];
+
 function formatDate(dateStr: string) {
   if (!dateStr) return '';
   const d = new Date(dateStr + 'T00:00:00');
@@ -26,7 +56,7 @@ function formatDate(dateStr: string) {
 }
 
 function isOverdue(dateStr: string, status: Task['status']) {
-  if (!dateStr || status === 'completed') return false;
+  if (!dateStr || status === 'done') return false;
   return new Date(dateStr) < new Date(new Date().toDateString());
 }
 
@@ -49,7 +79,7 @@ function CircleToggle({ done, onClick }: { done: boolean; onClick: () => void })
   return (
     <button
       onClick={onClick}
-      title={done ? 'Mark as pending' : 'Mark as complete'}
+      title={done ? 'Mark as to do' : 'Mark as done'}
       className={cn(
         'mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full border-2 transition-colors',
         done ? 'border-green-500 bg-green-500 text-white' : 'border-muted-foreground hover:border-primary',
@@ -81,7 +111,6 @@ function DeleteDialog({ message, onConfirm, onCancel }: {
   );
 }
 
-// ThemeBtn reads its own useTheme so it stays reactive across any route
 function ThemeBtn() {
   const { theme, setTheme } = useTheme();
   const isDark =
@@ -104,7 +133,7 @@ function TaskListItem({ task, onToggle, onEdit, onDelete }: {
   task: Task; onToggle: () => void; onEdit: () => void; onDelete: () => void;
 }) {
   const overdue = isOverdue(task.dueDate, task.status);
-  const done = task.status === 'completed';
+  const done = task.status === 'done';
   return (
     <div className={cn(
       'group flex items-start gap-3 rounded-xl border border-border bg-card px-4 py-3 transition-opacity',
@@ -145,7 +174,7 @@ function TaskCardItem({ task, onToggle, onEdit, onDelete }: {
   task: Task; onToggle: () => void; onEdit: () => void; onDelete: () => void;
 }) {
   const overdue = isOverdue(task.dueDate, task.status);
-  const done = task.status === 'completed';
+  const done = task.status === 'done';
   return (
     <div className={cn(
       'group flex flex-col rounded-xl border border-border bg-card p-4 transition-opacity',
@@ -182,10 +211,120 @@ function TaskCardItem({ task, onToggle, onEdit, onDelete }: {
   );
 }
 
+// ── kanban components ─────────────────────────────────────────────────────────
+
+function KanbanCard({ task, onDragStart, onEdit, onDelete }: {
+  task: Task; onDragStart: () => void; onEdit: () => void; onDelete: () => void;
+}) {
+  const overdue = isOverdue(task.dueDate, task.status);
+  return (
+    <div
+      draggable
+      onDragStart={onDragStart}
+      className="group cursor-grab select-none rounded-lg border border-border bg-card p-3 shadow-sm transition-shadow hover:shadow-md active:cursor-grabbing active:opacity-60"
+    >
+      <div className="mb-2 flex items-start justify-between gap-2">
+        <span className={cn('rounded-full px-2 py-0.5 text-xs font-medium capitalize', priorityClasses[task.priority])}>
+          {task.priority}
+        </span>
+        <div className="flex items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
+          <Button variant="ghost" size="icon-xs" onClick={onEdit}>
+            <IconWrapper name="Pencil" className="size-3.5" tooltip="Edit" />
+          </Button>
+          <Button variant="ghost" size="icon-xs" onClick={onDelete} className="text-destructive hover:text-destructive">
+            <IconWrapper name="Trash2" className="size-3.5" tooltip="Delete" />
+          </Button>
+        </div>
+      </div>
+      <p className="text-sm font-medium leading-snug">{task.title}</p>
+      {task.description && (
+        <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{task.description}</p>
+      )}
+      {task.dueDate && (
+        <p className={cn('mt-2 text-xs', overdue ? 'font-medium text-destructive' : 'text-muted-foreground')}>
+          {overdue ? '⚠ ' : ''}{formatDate(task.dueDate)}
+        </p>
+      )}
+    </div>
+  );
+}
+
+function KanbanBoard({ tasks, onEdit, onDelete, onStatusChange }: {
+  tasks: Task[];
+  onEdit: (task: Task) => void;
+  onDelete: (taskId: string) => void;
+  onStatusChange: (taskId: string, status: Status) => void;
+}) {
+  const [dragTaskId, setDragTaskId] = useState<string | null>(null);
+  const [dragOverCol, setDragOverCol] = useState<Status | null>(null);
+
+  return (
+    <div
+      className="grid grid-cols-1 gap-4 sm:grid-cols-3"
+      onDragEnd={() => { setDragTaskId(null); setDragOverCol(null); }}
+    >
+      {KANBAN_COLUMNS.map(col => {
+        const colTasks = tasks.filter(t => t.status === col.status);
+        const isOver = dragOverCol === col.status;
+        return (
+          <div
+            key={col.status}
+            onDragOver={e => { e.preventDefault(); setDragOverCol(col.status); }}
+            onDrop={e => {
+              e.preventDefault();
+              if (dragTaskId) {
+                const task = tasks.find(t => t.id === dragTaskId);
+                if (task && task.status !== col.status) onStatusChange(dragTaskId, col.status);
+              }
+              setDragTaskId(null);
+              setDragOverCol(null);
+            }}
+            className={cn(
+              'flex flex-col gap-2 rounded-xl border p-3 transition-colors',
+              isOver ? 'border-primary bg-primary/5' : 'border-border bg-muted/30',
+            )}
+          >
+            <div className="mb-1 flex items-center justify-between">
+              <div className="flex items-center gap-1.5">
+                <div className={cn('size-2 rounded-full', col.dotClass)} />
+                <span className={cn('text-sm font-semibold', col.headerClass)}>{col.label}</span>
+              </div>
+              <span className={cn('rounded-full px-2 py-0.5 text-xs font-semibold tabular-nums', col.countClass)}>
+                {colTasks.length}
+              </span>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              {colTasks.map(task => (
+                <KanbanCard
+                  key={task.id}
+                  task={task}
+                  onDragStart={() => setDragTaskId(task.id)}
+                  onEdit={() => onEdit(task)}
+                  onDelete={() => onDelete(task.id)}
+                />
+              ))}
+            </div>
+
+            {colTasks.length === 0 && (
+              <div className={cn(
+                'flex min-h-24 items-center justify-center rounded-lg border-2 border-dashed text-xs',
+                isOver ? 'border-primary text-primary' : 'border-border text-muted-foreground',
+              )}>
+                {isOver ? 'Drop here' : 'No tasks'}
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 // ── project card ──────────────────────────────────────────────────────────────
 
-function ProjectCard({ project, totalTasks, pendingTasks, onSelect, onEdit, onDelete }: {
-  project: Project; totalTasks: number; pendingTasks: number;
+function ProjectCard({ project, totalTasks, activeTasks, onSelect, onEdit, onDelete }: {
+  project: Project; totalTasks: number; activeTasks: number;
   onSelect: () => void; onEdit: () => void; onDelete: () => void;
 }) {
   return (
@@ -217,12 +356,12 @@ function ProjectCard({ project, totalTasks, pendingTasks, onSelect, onEdit, onDe
 
       <div className="mt-4 flex items-center gap-3 text-xs text-muted-foreground">
         <span>{totalTasks} {totalTasks === 1 ? 'task' : 'tasks'}</span>
-        {pendingTasks > 0 && (
+        {activeTasks > 0 && (
           <span className="rounded-full bg-amber-100 px-2 py-0.5 text-amber-700 dark:bg-amber-950 dark:text-amber-300">
-            {pendingTasks} pending
+            {activeTasks} active
           </span>
         )}
-        {totalTasks > 0 && pendingTasks === 0 && (
+        {totalTasks > 0 && activeTasks === 0 && (
           <span className="rounded-full bg-green-100 px-2 py-0.5 text-green-700 dark:bg-green-950 dark:text-green-300">
             all done ✓
           </span>
@@ -234,6 +373,13 @@ function ProjectCard({ project, totalTasks, pendingTasks, onSelect, onEdit, onDe
 
 // ── filter bar ────────────────────────────────────────────────────────────────
 
+const STATUS_LABELS: Record<TaskFilters['status'], string> = {
+  all: 'All',
+  todo: 'To Do',
+  'in-progress': 'In Progress',
+  done: 'Done',
+};
+
 function FilterBar({ filters, setFilters, viewMode, setViewMode }: {
   filters: TaskFilters;
   setFilters: (fn: (f: TaskFilters) => TaskFilters) => void;
@@ -243,7 +389,6 @@ function FilterBar({ filters, setFilters, viewMode, setViewMode }: {
   return (
     <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
       <div className="relative min-w-48 flex-1">
-        {/* tooltip={null} renders the icon directly (no wrapper span) so absolute positioning works */}
         <IconWrapper
           name="Search"
           className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
@@ -258,22 +403,24 @@ function FilterBar({ filters, setFilters, viewMode, setViewMode }: {
         />
       </div>
       <div className="flex flex-wrap items-center gap-2">
-        <div className="flex overflow-hidden rounded-lg border border-border text-xs">
-          {(['all', 'pending', 'completed'] as const).map(s => (
-            <button
-              key={s}
-              onClick={() => setFilters(f => ({ ...f, status: s }))}
-              className={cn(
-                'px-3 py-1.5 font-medium capitalize transition-colors',
-                filters.status === s
-                  ? 'bg-primary text-primary-foreground'
-                  : 'text-muted-foreground hover:bg-muted',
-              )}
-            >
-              {s === 'all' ? 'All' : s.charAt(0).toUpperCase() + s.slice(1)}
-            </button>
-          ))}
-        </div>
+        {viewMode !== 'kanban' && (
+          <div className="flex overflow-hidden rounded-lg border border-border text-xs">
+            {(['all', 'todo', 'in-progress', 'done'] as const).map(s => (
+              <button
+                key={s}
+                onClick={() => setFilters(f => ({ ...f, status: s }))}
+                className={cn(
+                  'px-3 py-1.5 font-medium transition-colors',
+                  filters.status === s
+                    ? 'bg-primary text-primary-foreground'
+                    : 'text-muted-foreground hover:bg-muted',
+                )}
+              >
+                {STATUS_LABELS[s]}
+              </button>
+            ))}
+          </div>
+        )}
         <select
           value={filters.priority}
           onChange={e => setFilters(f => ({ ...f, priority: e.target.value as TaskFilters['priority'] }))}
@@ -285,7 +432,7 @@ function FilterBar({ filters, setFilters, viewMode, setViewMode }: {
           <option value="low">Low</option>
         </select>
         <div className="flex overflow-hidden rounded-lg border border-border">
-          {(['list', 'card'] as const).map(v => (
+          {(['list', 'card', 'kanban'] as const).map(v => (
             <button
               key={v}
               onClick={() => setViewMode(v)}
@@ -296,7 +443,9 @@ function FilterBar({ filters, setFilters, viewMode, setViewMode }: {
             >
               {v === 'list'
                 ? <IconWrapper name="List" className="size-4" tooltip="List view" />
-                : <IconWrapper name="LayoutGrid" className="size-4" tooltip="Card view" />
+                : v === 'card'
+                ? <IconWrapper name="LayoutGrid" className="size-4" tooltip="Card view" />
+                : <IconWrapper name="Columns" className="size-4" tooltip="Kanban view" />
               }
             </button>
           ))}
@@ -317,7 +466,7 @@ function ProjectsView() {
   const projectStats = useMemo(() =>
     projects.map(p => {
       const ptasks = tasks.filter(t => t.projectId === p.id);
-      return { id: p.id, total: ptasks.length, pending: ptasks.filter(t => t.status === 'pending').length };
+      return { id: p.id, total: ptasks.length, active: ptasks.filter(t => t.status !== 'done').length };
     }),
     [projects, tasks],
   );
@@ -325,7 +474,7 @@ function ProjectsView() {
   const globalStats = useMemo(() => ({
     projects: projects.length,
     total: tasks.length,
-    completed: tasks.filter(t => t.status === 'completed').length,
+    completed: tasks.filter(t => t.status === 'done').length,
   }), [projects, tasks]);
 
   function handleSaveProject(data: { name: string; description: string }) {
@@ -381,7 +530,7 @@ function ProjectsView() {
                   key={project.id}
                   project={project}
                   totalTasks={s.total}
-                  pendingTasks={s.pending}
+                  activeTasks={s.active}
                   onSelect={() => navigate(`/projects/${project.id}`)}
                   onEdit={() => setProjectModal({ open: true, project })}
                   onDelete={() => setDeleteConfirm(project.id)}
@@ -415,7 +564,7 @@ function ProjectsView() {
 function ProjectDetailView() {
   const { projectId } = useParams<{ projectId: string }>();
   const navigate = useNavigate();
-  const { projects, tasks, addTask, updateTask, toggleTask, deleteTask } = useAppStore();
+  const { projects, tasks, addTask, updateTask, updateTaskStatus, toggleTask, deleteTask } = useAppStore();
   const [filters, setFilters] = useState<TaskFilters>({ search: '', status: 'all', priority: 'all' });
   const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [taskModal, setTaskModal] = useState<{ open: boolean; task?: Task }>({ open: false });
@@ -430,8 +579,8 @@ function ProjectDetailView() {
 
   const projectTaskStats = useMemo(() => ({
     total: projectTasks.length,
-    pending: projectTasks.filter(t => t.status === 'pending').length,
-    completed: projectTasks.filter(t => t.status === 'completed').length,
+    inProgress: projectTasks.filter(t => t.status === 'in-progress').length,
+    done: projectTasks.filter(t => t.status === 'done').length,
   }), [projectTasks]);
 
   const filteredTasks = useMemo(() => projectTasks.filter(task => {
@@ -443,6 +592,16 @@ function ProjectDetailView() {
     if (filters.priority !== 'all' && task.priority !== filters.priority) return false;
     return true;
   }), [projectTasks, filters]);
+
+  // In kanban, apply search + priority but not status filter (columns handle status grouping)
+  const kanbanTasks = useMemo(() => projectTasks.filter(task => {
+    if (filters.search) {
+      const q = filters.search.toLowerCase();
+      if (!task.title.toLowerCase().includes(q) && !task.description.toLowerCase().includes(q)) return false;
+    }
+    if (filters.priority !== 'all' && task.priority !== filters.priority) return false;
+    return true;
+  }), [projectTasks, filters.search, filters.priority]);
 
   const hasFilters = filters.search !== '' || filters.status !== 'all' || filters.priority !== 'all';
 
@@ -476,13 +635,20 @@ function ProjectDetailView() {
       <main className="mx-auto max-w-5xl space-y-5 px-4 py-6">
         <div className="grid grid-cols-3 gap-3 sm:gap-4">
           <StatCard label="Total Tasks" value={projectTaskStats.total} colorClass="text-foreground" icon={<IconWrapper name="ClipboardList" className="size-3.5" tooltip={null} />} />
-          <StatCard label="Pending" value={projectTaskStats.pending} colorClass="text-amber-600 dark:text-amber-400" icon={<IconWrapper name="Clock" className="size-3.5" tooltip={null} />} />
-          <StatCard label="Completed" value={projectTaskStats.completed} colorClass="text-green-600 dark:text-green-400" icon={<IconWrapper name="CheckSquare" className="size-3.5" tooltip={null} />} />
+          <StatCard label="In Progress" value={projectTaskStats.inProgress} colorClass="text-amber-600 dark:text-amber-400" icon={<IconWrapper name="Clock" className="size-3.5" tooltip={null} />} />
+          <StatCard label="Done" value={projectTaskStats.done} colorClass="text-green-600 dark:text-green-400" icon={<IconWrapper name="CheckSquare" className="size-3.5" tooltip={null} />} />
         </div>
 
         <FilterBar filters={filters} setFilters={setFilters} viewMode={viewMode} setViewMode={setViewMode} />
 
-        {filteredTasks.length === 0 ? (
+        {viewMode === 'kanban' ? (
+          <KanbanBoard
+            tasks={kanbanTasks}
+            onEdit={(task) => setTaskModal({ open: true, task })}
+            onDelete={(taskId) => setDeleteConfirm(taskId)}
+            onStatusChange={(taskId, status) => updateTaskStatus(taskId, status)}
+          />
+        ) : filteredTasks.length === 0 ? (
           <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-border py-20 text-center">
             <div className="text-5xl">📋</div>
             <p className="font-semibold text-lg">

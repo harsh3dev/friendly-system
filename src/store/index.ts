@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { Project, Task } from '@/lib/types';
+import type { Project, Task, Status } from '@/lib/types';
 
 type TaskInput = Pick<Task, 'title' | 'description' | 'priority' | 'dueDate'>;
 type ProjectInput = Pick<Project, 'name' | 'description'>;
@@ -15,6 +15,7 @@ interface AppState {
 
   addTask: (data: TaskInput & { projectId: string }) => void;
   updateTask: (id: string, data: TaskInput) => void;
+  updateTaskStatus: (id: string, status: Status) => void;
   toggleTask: (id: string) => void;
   deleteTask: (id: string) => void;
 }
@@ -49,7 +50,7 @@ export const useAppStore = create<AppState>()(
             {
               ...data,
               id: crypto.randomUUID(),
-              status: 'pending' as const,
+              status: 'todo' as const,
               createdAt: new Date().toISOString(),
             },
           ],
@@ -58,16 +59,32 @@ export const useAppStore = create<AppState>()(
       updateTask: (id, data) =>
         set((s) => ({ tasks: s.tasks.map((t) => (t.id === id ? { ...t, ...data } : t)) })),
 
+      updateTaskStatus: (id, status) =>
+        set((s) => ({ tasks: s.tasks.map((t) => (t.id === id ? { ...t, status } : t)) })),
+
       toggleTask: (id) =>
         set((s) => ({
           tasks: s.tasks.map((t) =>
-            t.id === id ? { ...t, status: t.status === 'pending' ? 'completed' : 'pending' } : t,
+            t.id === id ? { ...t, status: t.status === 'done' ? 'todo' : 'done' } : t,
           ),
         })),
 
       deleteTask: (id) =>
         set((s) => ({ tasks: s.tasks.filter((t) => t.id !== id) })),
     }),
-    { name: 'taskapp' },
+    {
+      name: 'taskapp',
+      version: 1,
+      migrate(persistedState: unknown, version: number) {
+        const state = persistedState as AppState & { tasks: Array<Task & { status: string }> };
+        if (version === 0) {
+          state.tasks = state.tasks.map((t) => ({
+            ...t,
+            status: (t.status as string) === 'completed' ? 'done' : ('todo' as const),
+          }));
+        }
+        return state;
+      },
+    },
   ),
 );

@@ -1,6 +1,6 @@
 export type Priority = 'low' | 'medium' | 'high';
-export type Status = 'pending' | 'completed';
-export type ViewMode = 'list' | 'card';
+export type Status = 'todo' | 'in-progress' | 'done';
+export type ViewMode = 'list' | 'card' | 'kanban';
 
 export interface Project {
   id: string;
