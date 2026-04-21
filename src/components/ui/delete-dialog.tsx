@@ -1,8 +1,11 @@
+import { useOverlayBehavior } from '@/components/ui/use-overlay-behavior';
 import { Button } from '@/components/ui/button';
 
 export function DeleteDialog({ message, onConfirm, onCancel }: {
   message: string; onConfirm: () => void; onCancel: () => void;
 }) {
+  useOverlayBehavior(onCancel);
+
   return (
     <div className="fixed inset-0 z-20 grid place-items-center bg-black/50 p-4">
       <div className="w-full max-w-sm rounded-xl border border-border bg-card p-6 shadow-2xl">

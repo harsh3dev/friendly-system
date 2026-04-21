@@ -1,6 +1,7 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { motion } from 'motion/react';
+import { useOverlayBehavior } from '@/components/ui/use-overlay-behavior';
 
 type Props = {
   onClose: () => void;
@@ -12,16 +13,27 @@ const EXIT_MS = 180;
 
 export function Modal({ onClose, children, className }: Props) {
   const [open, setOpen] = useState(false);
+  const closeTimeoutRef = useRef<number | null>(null);
 
   useEffect(() => {
     const id = requestAnimationFrame(() => setOpen(true));
-    return () => cancelAnimationFrame(id);
+    return () => {
+      cancelAnimationFrame(id);
+      if (closeTimeoutRef.current !== null) {
+        window.clearTimeout(closeTimeoutRef.current);
+      }
+    };
   }, []);
 
   const close = useCallback(() => {
     setOpen(false);
-    setTimeout(onClose, EXIT_MS);
+    if (closeTimeoutRef.current !== null) {
+      window.clearTimeout(closeTimeoutRef.current);
+    }
+    closeTimeoutRef.current = window.setTimeout(onClose, EXIT_MS);
   }, [onClose]);
+
+  useOverlayBehavior(close);
 
   return createPortal(
     <motion.div
