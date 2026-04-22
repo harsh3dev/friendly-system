@@ -137,6 +137,99 @@ User action
 
 ---
 
+## Architecture
+
+### Offline Behaviour
+
+```mermaid
+flowchart TD
+    A["Browser loads app"] --> B["Register Service Worker\n(production only)"]
+    B --> C["install event\nPrecache app shell\n/ · /index.html · /favicon.svg · /og-image.png"]
+    C --> D["activate event\nPurge stale caches"]
+    D --> E{navigator.onLine?}
+
+    E -->|true| F["Normal operation"]
+    F --> G["Navigation requests\nNetwork-first → cache fallback"]
+    F --> H["Static asset requests\nCache-first → network + re-cache"]
+
+    E -->|false| I["OfflineStatusProvider\ndetects offline event"]
+    I --> J["OfflineBanner shown"]
+    I --> K["Read operations\nFully functional\nstate served from memory / localStorage"]
+    I --> L["Mutating actions BLOCKED\ncreate · edit · delete · import\nUser-facing notice shown"]
+```
+
+---
+
+### State Management & Persistence
+
+```mermaid
+flowchart TD
+    A["User action in UI"] --> B["Zustand store action called"]
+
+    B --> C["In-memory state updated"]
+    C --> D["projects[]\nid · name · description · createdAt"]
+    C --> E["tasks[]\nid · projectId · title · description\npriority · status · dueDate · linkedTaskIds"]
+    C --> F["taskHistory[]\nAppend-only audit log per task"]
+
+    C --> G["persist middleware"]
+    G --> H["Serialise → JSON.stringify"]
+    H --> I["localStorage.setItem — key: taskapp"]
+
+    I --> J{Schema version\nmatches?}
+    J -->|yes| K["Hydrate store directly"]
+    J -->|no| L["Run migrate()\nForward-patch old schema → current v4"]
+    L --> K
+
+    M["Theme preference"] --> N["localStorage — key: theme\nPersisted independently\nSurvives import / replace"]
+```
+
+---
+
+### Application Core Flow
+
+```mermaid
+flowchart TD
+    Start(["App bootstrap"]) --> SW["Register service worker\n(prod only)"]
+    SW --> LS["Hydrate Zustand store\nfrom localStorage"]
+    LS --> TH["Resolve theme\nlocalStorage → system preference"]
+    TH --> RT["Mount router"]
+
+    RT --> Home["/ — Home\nProjectsView"]
+    Home --> SC["Stat cards\ntotal · pending · completed"]
+    Home --> CP["Create project\nstore.addProject()"]
+    Home --> EP["Edit project\nstore.updateProject()"]
+    Home --> DP["Delete project\nConfirm dialog\nstore.deleteProject()\nCascades tasks + history"]
+    Home --> EX["Export\nJSON stringify → file download"]
+    Home --> IM["Import\nFile upload → validate\nConfirm → store.replaceAll()"]
+
+    Home --> PD["/projects/:projectId\nProjectDetailView"]
+    PD --> FB["FilterBar\nsearch · status · priority"]
+    PD --> VT["View toggle\nList · Card · Kanban"]
+    PD --> CT["Create task\nTaskModal → store.addTask()"]
+    PD --> ET["Edit task\nTaskModal → store.updateTask()\n+ history event appended"]
+    PD --> DT["Delete task\nConfirm → store.deleteTask()"]
+    PD --> TS["Toggle status inline\nstore.updateTask()\n+ history event appended"]
+
+    PD --> TD["/projects/:projectId/tasks/:taskId\nTaskDetailPage"]
+    TD --> TV["Full task view\nRich-text description"]
+    TD --> HL["History log\ntaskHistory filtered by taskId"]
+    TD --> LT["Linked tasks\nlinkedTaskIds resolved → navigate on click"]
+```
+
+---
+
+## Tradeoffs
+
+### Image Attachments Not Implemented
+
+Task cards intentionally do not support image attachments. localStorage, which backs the entire persistence layer, has a hard browser-enforced limit of roughly 5 MB per origin. A single image (even JPEG-compressed) would consume a significant portion of that budget and risks crashing the store write silently — leaving the user with data loss and no error message. A proper implementation would require an `IndexedDB`-backed blob store (or an object-storage backend), which is out of scope for a frontend-only app. The tradeoff keeps the persistence layer simple and reliable at the cost of richer media support.
+
+### Edits Blocked in Offline Mode
+
+Create, edit, and delete operations are intentionally disabled when `navigator.onLine` is false. This mimics the behaviour of a real API-backed application where mutations require a network round-trip and the server is the source of truth. Allowing offline edits without a sync mechanism would create a situation where local changes silently diverge from "server" state, producing conflicts with no resolution strategy. The conservative tradeoff — block writes, allow reads — ensures the user always sees consistent, authoritative data and is never surprised by lost or overwritten changes once connectivity returns.
+
+---
+
 ## Key Design Decisions
 
 - **No backend** — the product requirement is a frontend-only app; localStorage via Zustand persist is the simplest durable option
