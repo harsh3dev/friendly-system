@@ -106,7 +106,9 @@ export function ThemeProvider({
       const root = document.documentElement
       const resolvedTheme =
         nextTheme === "system" ? getSystemTheme() : nextTheme
-      const restoreTransitions = disableTransitionOnChange
+
+      const alreadyApplied = root.classList.contains(resolvedTheme)
+      const restoreTransitions = disableTransitionOnChange && !alreadyApplied
         ? disableTransitionsTemporarily()
         : null
 
